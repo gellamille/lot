@@ -12,3 +12,33 @@ A V5 új moduljai:
 - szállítmány sztornózásakor a foglalás felszabadul
 
 A partneri rendelési felület ebben a verzióban nincs benne.
+
+## Telepítés
+
+### 1. Supabase
+
+Futtasd le egyszer:
+
+`gellamille_lot_v5_migration.sql`
+
+A V4 migrációnak előtte már futnia kell.
+
+### 2. GitHub
+
+A ZIP kicsomagolt tartalmát töltsd fel a repository gyökerébe, majd Commit changes.
+
+### 3. Vercel
+
+A GitHub commit után a Vercel automatikusan új deploymentet készít.
+
+Framework: Other  
+Build Command: üres  
+Output Directory: üres
+
+
+## V5.1 javítás
+
+- Oldalfrissítéskor nem villan fel tévesen a belépőoldal.
+- A Supabase-munkamenet és az adatbázis betöltéséig külön töltőképernyő jelenik meg.
+- Kapcsolati hiba esetén egyértelmű hibaüzenet és Újrapróbálás gomb látható.
+- Ehhez a javításhoz nem szükséges új Supabase SQL-migráció.
