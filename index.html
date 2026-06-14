@@ -1,0 +1,1506 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#5f6d58" />
+  <meta name="description" content="Gellamille LOT generátor, gyártási napló és termelési elemzés" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <title>Gellamille LOT</title>
+  <style>
+    :root {
+      --bg:#f2f0ea;
+      --card:#ffffff;
+      --text:#20241f;
+      --muted:#697167;
+      --accent:#5f6d58;
+      --accent-soft:#e8ece5;
+      --border:#dce0d8;
+      --danger:#9b3f3f;
+      --danger-bg:#f7eaea;
+      --success:#3e704b;
+      --warning:#8a672a;
+      --warning-bg:#fbf3df;
+      --overlay:rgba(15,20,14,.58);
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0;
+      min-height:100vh;
+      background:var(--bg);
+      color:var(--text);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .hidden { display:none !important; }
+    .shell { max-width:1240px; margin:auto; padding:22px 16px 60px; }
+    .topbar {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brandmark {
+      width:46px;
+      height:46px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:var(--accent);
+      color:white;
+      font-weight:900;
+      letter-spacing:-.04em;
+      flex:0 0 auto;
+    }
+    h1 { margin:0; font-size:clamp(25px,4vw,38px); letter-spacing:-.04em; }
+    h2 { margin:0 0 15px; font-size:18px; }
+    h3 { margin:0 0 10px; font-size:15px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:3px; }
+    .userbox { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:12px; }
+    .tabs {
+      display:flex;
+      gap:8px;
+      overflow:auto;
+      padding-bottom:4px;
+      margin-bottom:18px;
+    }
+    .tab-btn {
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--muted);
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .tab-btn.active {
+      background:var(--accent);
+      color:#fff;
+      border-color:var(--accent);
+    }
+    .card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:20px;
+      box-shadow:0 10px 30px rgba(30,40,30,.05);
+    }
+    .login-card { max-width:440px; margin:11vh auto 0; }
+    .grid-two {
+      display:grid;
+      grid-template-columns:.92fr 1.08fr;
+      gap:18px;
+      align-items:start;
+    }
+    .fields {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:13px;
+    }
+    .full { grid-column:1/-1; }
+    label {
+      display:block;
+      margin-bottom:6px;
+      font-size:12px;
+      font-weight:800;
+    }
+    input,select,textarea {
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:11px;
+      padding:12px 13px;
+      background:#fff;
+      color:var(--text);
+      outline:none;
+    }
+    input[readonly] { background:#f4f5f2; color:#4f574c; }
+    textarea { resize:vertical; min-height:84px; }
+    input:focus,select:focus,textarea:focus {
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(95,109,88,.14);
+    }
+    .actions {
+      display:flex;
+      gap:9px;
+      flex-wrap:wrap;
+      margin-top:16px;
+    }
+    .btn {
+      border:0;
+      border-radius:11px;
+      padding:11px 15px;
+      font-weight:800;
+    }
+    .primary { background:var(--accent); color:#fff; }
+    .secondary { background:#edf0ea; color:var(--text); }
+    .ghost { background:transparent; border:1px solid var(--border); color:var(--text); }
+    .danger { background:var(--danger-bg); color:var(--danger); }
+    .status { min-height:22px; margin-top:11px; font-size:13px; }
+    .ok { color:var(--success); }
+    .error { color:var(--danger); }
+    .note { color:var(--muted); font-size:12px; line-height:1.5; margin:12px 0 0; }
+    .required::after { content:" *"; color:var(--danger); }
+    .result {
+      padding:22px 15px;
+      margin-top:17px;
+      border:2px dashed #9aa690;
+      background:#f8faf6;
+      border-radius:14px;
+      text-align:center;
+    }
+    .result small { display:block; color:var(--muted); margin-bottom:7px; }
+    .result strong { font-size:clamp(22px,4vw,31px); overflow-wrap:anywhere; }
+    .result-meta { color:var(--muted); font-size:12px; margin-top:8px; }
+    .format-box {
+      margin-top:14px;
+      padding:12px 13px;
+      background:#f5f6f3;
+      border:1px solid var(--border);
+      border-radius:11px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .format-box strong {
+      display:block;
+      color:var(--text);
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:15px;
+      margin-bottom:4px;
+    }
+    .inline-add {
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:8px;
+      align-items:end;
+    }
+    .toolbar {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .toolbar-group {
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:end;
+    }
+    .toolbar-group > div { min-width:150px; }
+    .table-wrap {
+      overflow:auto;
+      border:1px solid var(--border);
+      border-radius:12px;
+    }
+    table {
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    th,td {
+      padding:10px 9px;
+      border-bottom:1px solid var(--border);
+      text-align:left;
+      vertical-align:top;
+    }
+    th {
+      background:#f6f7f4;
+      color:var(--muted);
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+    tbody tr:last-child td { border-bottom:0; }
+    tr.row-void { opacity:.72; background:#fcf4f4; }
+    .code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:800; }
+    .empty { color:var(--muted); text-align:center; padding:26px; }
+    .badge {
+      display:inline-flex;
+      align-items:center;
+      border-radius:999px;
+      padding:4px 8px;
+      font-size:10px;
+      font-weight:900;
+    }
+    .badge-active { background:#e7f2e8; color:var(--success); }
+    .badge-void { background:var(--danger-bg); color:var(--danger); }
+    .lot-link {
+      border:0;
+      background:transparent;
+      padding:0;
+      color:var(--text);
+      font-weight:900;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      text-decoration:underline;
+      text-decoration-style:dotted;
+      text-underline-offset:3px;
+    }
+    .stats {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .stat {
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:17px;
+    }
+    .stat-label { color:var(--muted); font-size:12px; font-weight:750; }
+    .stat-value { font-size:clamp(27px,4vw,38px); font-weight:900; margin-top:5px; letter-spacing:-.04em; }
+    .analytics-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      margin-top:18px;
+    }
+    .bars { display:grid; gap:10px; }
+    .bar-row {
+      display:grid;
+      grid-template-columns:minmax(115px,170px) 1fr 80px;
+      gap:10px;
+      align-items:center;
+      font-size:12px;
+    }
+    .bar-track {
+      height:12px;
+      border-radius:999px;
+      background:#eef0ec;
+      overflow:hidden;
+    }
+    .bar-fill {
+      height:100%;
+      border-radius:999px;
+      background:var(--accent);
+      min-width:2px;
+    }
+    .bar-value { text-align:right; font-weight:900; }
+    .modal-backdrop {
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:grid;
+      place-items:center;
+      padding:18px;
+      background:var(--overlay);
+    }
+    .modal {
+      width:min(560px,100%);
+      max-height:90vh;
+      overflow:auto;
+      background:#fff;
+      border-radius:18px;
+      padding:22px;
+      box-shadow:0 24px 80px rgba(0,0,0,.28);
+    }
+    .modal h2 { font-size:21px; line-height:1.3; margin-bottom:10px; }
+    .modal-summary {
+      margin-top:14px;
+      padding:13px;
+      border-radius:11px;
+      background:#f4f5f2;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+    }
+    .modal-summary strong { color:var(--text); }
+    .modal-actions {
+      display:flex;
+      justify-content:flex-end;
+      gap:9px;
+      margin-top:18px;
+      flex-wrap:wrap;
+    }
+    .interpretation {
+      margin-top:10px;
+      padding:12px;
+      border-left:4px solid var(--accent);
+      background:#f6f7f4;
+      border-radius:8px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+    .detail-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:14px;
+    }
+    .detail-item {
+      padding:11px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#fafbf9;
+    }
+    .detail-item small { display:block; color:var(--muted); margin-bottom:4px; }
+    .detail-item strong { font-size:13px; overflow-wrap:anywhere; }
+    @media(max-width:920px) {
+      .grid-two,.analytics-grid { grid-template-columns:1fr; }
+      .stats { grid-template-columns:1fr; }
+      .fields { grid-template-columns:1fr; }
+      .full { grid-column:auto; }
+      .topbar { align-items:flex-start; }
+      .userbox { flex-direction:column; align-items:flex-end; }
+      .bar-row { grid-template-columns:110px 1fr 65px; }
+      .detail-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <section id="loginView" class="shell">
+    <div class="card login-card">
+      <div class="brand" style="margin-bottom:22px">
+        <div class="brandmark">GM</div>
+        <div>
+          <h1>Gellamille LOT</h1>
+          <div class="sub">Központi gyártási rendszer</div>
+        </div>
+      </div>
+      <h2>Belépés</h2>
+      <div>
+        <label for="loginEmail">E-mail-cím</label>
+        <input id="loginEmail" type="email" autocomplete="email" />
+      </div>
+      <div style="margin-top:12px">
+        <label for="loginPassword">Jelszó</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" />
+      </div>
+      <button id="loginBtn" class="btn primary" style="width:100%;margin-top:16px">Belépés</button>
+      <div id="loginStatus" class="status"></div>
+    </div>
+  </section>
+
+  <main id="appView" class="shell hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brandmark">GM</div>
+        <div>
+          <h1>Gellamille LOT</h1>
+          <div class="sub">LOT-generátor · gyártási napló · elemzés</div>
+        </div>
+      </div>
+      <div class="userbox">
+        <span id="userEmail"></span>
+        <button id="logoutBtn" class="btn ghost">Kilépés</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Fő navigáció">
+      <button class="tab-btn active" data-tab="create">Új LOT</button>
+      <button class="tab-btn" data-tab="journal">Gyártási napló</button>
+      <button class="tab-btn" data-tab="analytics">Elemzés</button>
+    </nav>
+
+    <section id="tab-create" class="tab-panel">
+      <div class="grid-two">
+        <div class="card">
+          <h2>Új gyártási tétel</h2>
+
+          <div class="fields">
+            <div>
+              <label class="required" for="productionDate">Gyártás dátuma</label>
+              <input id="productionDate" type="date" />
+            </div>
+
+            <div>
+              <label class="required" for="productionPeriod">Gyártási időszak</label>
+              <select id="productionPeriod">
+                <option value="AM">Délelőtt</option>
+                <option value="PM">Délután</option>
+              </select>
+            </div>
+
+            <div class="full">
+              <label class="required" for="flavorCode">Íz</label>
+              <select id="flavorCode"></select>
+            </div>
+
+            <div>
+              <label class="required" for="sizeMl">Kiszerelés</label>
+              <select id="sizeMl">
+                <option value="150">150 ml</option>
+                <option value="300">300 ml</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="bestBeforePreview">Automatikus lejárat</label>
+              <input id="bestBeforePreview" type="date" readonly />
+            </div>
+
+            <div>
+              <label class="required" for="quantity">Gyártott darabszám</label>
+              <input id="quantity" type="number" min="1" step="1" placeholder="pl. 1200" />
+            </div>
+
+            <div>
+              <label class="required" for="operatorId">Gyártásért felelős</label>
+              <select id="operatorId"></select>
+            </div>
+
+            <div class="full">
+              <label for="newOperatorName">Új felelős személy hozzáadása</label>
+              <div class="inline-add">
+                <input id="newOperatorName" placeholder="Új név" maxlength="80" />
+                <button id="addOperatorBtn" class="btn secondary">Hozzáadás</button>
+              </div>
+            </div>
+
+            <div class="full">
+              <label for="note">Megjegyzés</label>
+              <textarea id="note" placeholder="Opcionális gyártási megjegyzés"></textarea>
+            </div>
+          </div>
+
+          <div class="format-box">
+            <strong>FDP15-26-0012</strong>
+            Ízkód + kiszerelés + év + termékenkénti éves sorszám
+          </div>
+
+          <div class="actions">
+            <button id="createLotBtn" class="btn primary">LOT létrehozása</button>
+          </div>
+
+          <div id="createStatus" class="status"></div>
+
+          <div id="resultBox" class="result hidden">
+            <small>Létrehozott LOT-szám</small>
+            <strong id="createdLot"></strong>
+            <div id="createdMeta" class="result-meta"></div>
+            <div class="actions" style="justify-content:center">
+              <button id="copyLotBtn" class="btn secondary">Másolás</button>
+              <button id="openCreatedDetailBtn" class="btn secondary">Adatlap</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Utolsó aktív LOT-ok</h2>
+          <div id="recentLotsTable"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-journal" class="tab-panel hidden">
+      <div class="card">
+        <div class="toolbar">
+          <h2 style="margin:0">Gyártási napló</h2>
+          <div class="toolbar-group">
+            <button id="refreshBtn" class="btn secondary">Frissítés</button>
+            <button id="exportBtn" class="btn secondary">CSV export</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-group" style="width:100%">
+            <div style="flex:1;min-width:220px">
+              <label for="searchInput">Keresés</label>
+              <input id="searchInput" placeholder="LOT, íz, dátum, felelős vagy indok" />
+            </div>
+            <div>
+              <label for="statusFilter">Státusz</label>
+              <select id="statusFilter">
+                <option value="all">Minden LOT</option>
+                <option value="active">Csak aktív</option>
+                <option value="void">Csak sztornózott</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="journalStatus" class="status"></div>
+        <div id="lotsTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-analytics" class="tab-panel hidden">
+      <div class="card">
+        <div class="toolbar">
+          <h2 style="margin:0">Termelési elemzés</h2>
+          <button id="analyticsExportBtn" class="btn secondary">Elemzés CSV</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-group">
+            <div>
+              <label for="analyticsPreset">Időszak</label>
+              <select id="analyticsPreset">
+                <option value="today">Ma</option>
+                <option value="current_week">Aktuális hét</option>
+                <option value="previous_week">Előző hét</option>
+                <option value="current_month" selected>Aktuális hónap</option>
+                <option value="previous_month">Előző hónap</option>
+                <option value="all">Teljes időszak</option>
+                <option value="custom">Egyedi dátumtartomány</option>
+              </select>
+            </div>
+            <div>
+              <label for="analyticsFrom">Kezdőnap</label>
+              <input id="analyticsFrom" type="date" />
+            </div>
+            <div>
+              <label for="analyticsTo">Zárónap</label>
+              <input id="analyticsTo" type="date" />
+            </div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Aktív LOT-ok száma</div>
+            <div id="statActiveLots" class="stat-value">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Legyártott darabszám</div>
+            <div id="statUnits" class="stat-value">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Sztornózott LOT-ok</div>
+            <div id="statVoidedLots" class="stat-value">0</div>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="card" style="box-shadow:none">
+            <h3>Napi bontás</h3>
+            <div id="dailyAnalytics"></div>
+          </div>
+
+          <div class="card" style="box-shadow:none">
+            <h3>Termékenkénti darabszám</h3>
+            <div id="productBars" class="bars"></div>
+          </div>
+
+          <div class="card" style="box-shadow:none">
+            <h3>Heti bontás</h3>
+            <div id="weeklyAnalytics"></div>
+          </div>
+
+          <div class="card" style="box-shadow:none">
+            <h3>Havi bontás</h3>
+            <div id="monthlyAnalytics"></div>
+          </div>
+
+          <div class="card" style="box-shadow:none;grid-column:1/-1">
+            <h3>Termékenkénti összesítés</h3>
+            <div id="productAnalytics"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="confirmModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2>Biztos, hogy létrehozol egy új LOT számot?</h2>
+      <div id="confirmSummary" class="modal-summary"></div>
+      <div class="modal-actions">
+        <button id="cancelCreateBtn" class="btn secondary">Mégse</button>
+        <button id="confirmCreateBtn" class="btn primary">Igen, létrehozom</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="voidModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2>LOT sztornózása</h2>
+      <div id="voidLotInterpretation"></div>
+
+      <div style="margin-top:16px">
+        <label class="required" for="voidReasonType">Sztornózás oka</label>
+        <select id="voidReasonType">
+          <option value="">Válassz indokot</option>
+          <option value="Tévesen létrehozva">Tévesen létrehozva</option>
+          <option value="Hibás termék vagy kiszerelés">Hibás termék vagy kiszerelés</option>
+          <option value="Hibás darabszám">Hibás darabszám</option>
+          <option value="Gyártás meghiúsult">Gyártás meghiúsult</option>
+          <option value="Minőségi hiba">Minőségi hiba</option>
+          <option value="Egyéb">Egyéb</option>
+        </select>
+      </div>
+
+      <div style="margin-top:12px">
+        <label for="voidReasonDetail">Részletes indoklás</label>
+        <textarea id="voidReasonDetail" placeholder="Röviden írd le, miért kell sztornózni"></textarea>
+      </div>
+
+      <p class="note">
+        A sztornózott LOT megmarad a naplóban, nem számít bele az aktív termelési adatokba, és a sorszáma nem használható fel újra.
+      </p>
+
+      <div class="modal-actions">
+        <button id="cancelVoidBtn" class="btn secondary">Mégse</button>
+        <button id="confirmVoidBtn" class="btn danger">LOT sztornózása</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="detailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2 id="detailTitle">LOT adatlap</h2>
+      <div id="detailInterpretation"></div>
+      <div id="detailContent" class="detail-grid"></div>
+      <div class="modal-actions">
+        <button id="closeDetailBtn" class="btn secondary">Bezárás</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const SUPABASE_URL = "https://zahxyscqdosxbxsbckhw.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3Y46Rccp1lyNHlTx6Ab8Fg_lkY5hwo5";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    const el = id => document.getElementById(id);
+    let flavors = [];
+    let operators = [];
+    let lots = [];
+    let selectedVoidLot = null;
+    let createdLotRow = null;
+
+    function localDate() {
+      const now = new Date();
+      return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 10);
+    }
+
+    function parseDate(dateString) {
+      const [y,m,d] = dateString.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return "—";
+      const [y,m,d] = dateString.split("-");
+      return `${y}.${m}.${d}.`;
+    }
+
+    function addMonthsClamped(dateString, months) {
+      if (!dateString) return "";
+      const [year, month, day] = dateString.split("-").map(Number);
+      const rawMonth = (month - 1) + months;
+      const targetYear = year + Math.floor(rawMonth / 12);
+      const targetMonthIndex = ((rawMonth % 12) + 12) % 12;
+      const lastDay = new Date(targetYear, targetMonthIndex + 1, 0).getDate();
+      const targetDay = Math.min(day, lastDay);
+      return `${targetYear}-${String(targetMonthIndex + 1).padStart(2,"0")}-${String(targetDay).padStart(2,"0")}`;
+    }
+
+    function refreshExpiryPreview() {
+      el("bestBeforePreview").value = addMonthsClamped(el("productionDate").value, 3);
+    }
+
+    function periodName(code) {
+      return code === "PM" ? "Délután" : "Délelőtt";
+    }
+
+    function status(target, message, type = "") {
+      target.textContent = message;
+      target.className = `status ${type}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("hu-HU").format(Number(value || 0));
+    }
+
+    function flavorName(code) {
+      return flavors.find(f => f.code === code)?.name || code;
+    }
+
+    function operatorName(id, fallback = "") {
+      return operators.find(o => String(o.id) === String(id))?.name || fallback || "—";
+    }
+
+    function sizeCode(sizeMl) {
+      return Number(sizeMl) === 300 ? "30" : "15";
+    }
+
+    function decodeLot(row) {
+      const year = String(row.production_date || "").slice(0,4);
+      const sequence = Number(row.batch_no || 0);
+      return `${flavorName(row.flavor_code)}, ${row.size_ml} ml, ${year}. évi ${sequence}. LOT`;
+    }
+
+    function databaseMeaning(row) {
+      return `${decodeLot(row)}; gyártás: ${formatDate(row.production_date)} ${periodName(row.production_period).toLowerCase()}; ` +
+        `darabszám: ${formatNumber(row.quantity)} db; lejárat: ${formatDate(row.best_before)}; ` +
+        `felelős: ${operatorName(row.operator_id, row.operator_name)}`;
+    }
+
+    function interpretationHtml(row) {
+      return `
+        <div class="interpretation">
+          <strong>${escapeHtml(row.lot_number)}</strong>
+          (${escapeHtml(databaseMeaning(row))})
+        </div>`;
+    }
+
+    function setTab(tabName) {
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabName);
+      });
+      document.querySelectorAll(".tab-panel").forEach(panel => {
+        panel.classList.add("hidden");
+      });
+      el(`tab-${tabName}`).classList.remove("hidden");
+
+      if (tabName === "analytics") renderAnalytics();
+    }
+
+    async function showSession(session) {
+      const loggedIn = Boolean(session?.user);
+      el("loginView").classList.toggle("hidden", loggedIn);
+      el("appView").classList.toggle("hidden", !loggedIn);
+
+      if (loggedIn) {
+        el("userEmail").textContent = session.user.email || "";
+        await initializeApp();
+      }
+    }
+
+    async function login() {
+      status(el("loginStatus"), "Belépés folyamatban…");
+      el("loginBtn").disabled = true;
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: el("loginEmail").value.trim(),
+        password: el("loginPassword").value
+      });
+
+      el("loginBtn").disabled = false;
+
+      if (error) status(el("loginStatus"), "Sikertelen belépés: " + error.message, "error");
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      flavors = [];
+      operators = [];
+      lots = [];
+      el("loginPassword").value = "";
+    }
+
+    async function initializeApp() {
+      el("productionDate").value ||= localDate();
+      refreshExpiryPreview();
+      applyAnalyticsPreset("current_month");
+      await Promise.all([loadFlavors(), loadOperators()]);
+      await loadLots();
+    }
+
+    async function loadFlavors() {
+      const { data, error } = await supabase
+        .from("flavors")
+        .select("code,name,active")
+        .eq("active", true)
+        .order("name");
+
+      if (error) {
+        status(el("createStatus"), "Az ízek betöltése sikertelen: " + error.message, "error");
+        return;
+      }
+
+      flavors = data || [];
+      el("flavorCode").innerHTML = flavors
+        .map(f => `<option value="${escapeHtml(f.code)}">${escapeHtml(f.name)} (${escapeHtml(f.code)})</option>`)
+        .join("");
+    }
+
+    async function loadOperators(selectId = null) {
+      const { data, error } = await supabase
+        .from("operators")
+        .select("id,name,active,created_at")
+        .eq("active", true)
+        .order("name");
+
+      if (error) {
+        status(el("createStatus"), "A felelősök betöltése sikertelen: " + error.message, "error");
+        return;
+      }
+
+      operators = data || [];
+      el("operatorId").innerHTML =
+        `<option value="">Válassz felelőst</option>` +
+        operators.map(o => `<option value="${o.id}">${escapeHtml(o.name)}</option>`).join("");
+
+      if (selectId) el("operatorId").value = String(selectId);
+    }
+
+    async function addOperator() {
+      const name = el("newOperatorName").value.trim();
+
+      if (name.length < 2) {
+        status(el("createStatus"), "Adj meg legalább 2 karakteres nevet.", "error");
+        return;
+      }
+
+      el("addOperatorBtn").disabled = true;
+
+      const { data, error } = await supabase.rpc("add_gellamille_operator", {
+        p_name: name
+      });
+
+      el("addOperatorBtn").disabled = false;
+
+      if (error) {
+        status(el("createStatus"), "A felelős hozzáadása sikertelen: " + error.message, "error");
+        return;
+      }
+
+      const row = Array.isArray(data) ? data[0] : data;
+      el("newOperatorName").value = "";
+      await loadOperators(row?.id);
+      status(el("createStatus"), `${row?.name || name} hozzáadva a felelősök listájához.`, "ok");
+    }
+
+    async function loadLots() {
+      status(el("journalStatus"), "Napló betöltése…");
+
+      const { data, error } = await supabase
+        .from("lots")
+        .select("id,lot_number,production_date,production_period,flavor_code,size_ml,batch_no,quantity,best_before,operator_id,operator_name,note,status,created_at,created_by,void_reason,voided_at,voided_by")
+        .order("created_at", { ascending:false })
+        .limit(5000);
+
+      if (error) {
+        status(el("journalStatus"), "A napló betöltése sikertelen: " + error.message, "error");
+        return;
+      }
+
+      lots = data || [];
+      renderRecentLots();
+      renderJournal();
+      renderAnalytics();
+      status(el("journalStatus"), `Napló betöltve: ${lots.length} tétel.`, "ok");
+    }
+
+    function validateCreate() {
+      if (!el("productionDate").value) {
+        status(el("createStatus"), "A gyártási dátum kötelező.", "error");
+        return false;
+      }
+      if (!el("flavorCode").value) {
+        status(el("createStatus"), "Az íz kötelező.", "error");
+        return false;
+      }
+      const quantity = Number(el("quantity").value);
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        status(el("createStatus"), "A darabszám kötelező, pozitív egész szám legyen.", "error");
+        return false;
+      }
+      if (!el("operatorId").value) {
+        status(el("createStatus"), "A gyártásért felelős személy kötelező.", "error");
+        return false;
+      }
+      return true;
+    }
+
+    function openCreateConfirm() {
+      if (!validateCreate()) return;
+
+      const flavor = flavors.find(f => f.code === el("flavorCode").value);
+      const operator = operators.find(o => String(o.id) === String(el("operatorId").value));
+
+      el("confirmSummary").innerHTML = `
+        <strong>Íz:</strong> ${escapeHtml(flavor?.name || "")}<br>
+        <strong>Kiszerelés:</strong> ${escapeHtml(el("sizeMl").value)} ml<br>
+        <strong>Gyártás:</strong> ${escapeHtml(formatDate(el("productionDate").value))} · ${escapeHtml(periodName(el("productionPeriod").value))}<br>
+        <strong>Lejárat:</strong> ${escapeHtml(formatDate(el("bestBeforePreview").value))}<br>
+        <strong>Darabszám:</strong> ${formatNumber(el("quantity").value)} db<br>
+        <strong>Felelős:</strong> ${escapeHtml(operator?.name || "")}
+      `;
+
+      el("confirmModal").classList.remove("hidden");
+    }
+
+    async function createLot() {
+      el("confirmModal").classList.add("hidden");
+      el("createLotBtn").disabled = true;
+      el("confirmCreateBtn").disabled = true;
+      status(el("createStatus"), "LOT létrehozása…");
+
+      const { data, error } = await supabase.rpc("create_gellamille_lot", {
+        p_production_date: el("productionDate").value,
+        p_production_period: el("productionPeriod").value,
+        p_flavor_code: el("flavorCode").value,
+        p_size_ml: Number(el("sizeMl").value),
+        p_quantity: Number(el("quantity").value),
+        p_operator_id: Number(el("operatorId").value),
+        p_note: el("note").value.trim() || null
+      });
+
+      el("createLotBtn").disabled = false;
+      el("confirmCreateBtn").disabled = false;
+
+      if (error) {
+        status(el("createStatus"), "A LOT létrehozása sikertelen: " + error.message, "error");
+        return;
+      }
+
+      const row = Array.isArray(data) ? data[0] : data;
+      createdLotRow = row;
+      el("createdLot").textContent = row.lot_number;
+      el("createdMeta").textContent = databaseMeaning(row);
+      el("resultBox").classList.remove("hidden");
+      el("quantity").value = "";
+      el("note").value = "";
+      status(el("createStatus"), "A LOT-szám sikeresen létrejött.", "ok");
+
+      await loadLots();
+    }
+
+    function renderRecentLots() {
+      const recent = lots.filter(l => l.status === "active").slice(0,8);
+
+      if (!recent.length) {
+        el("recentLotsTable").innerHTML = `<div class="empty">Még nincs aktív LOT.</div>`;
+        return;
+      }
+
+      el("recentLotsTable").innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>LOT</th><th>Termék</th><th>Db</th><th>Gyártás</th></tr></thead>
+            <tbody>
+              ${recent.map(row => `
+                <tr>
+                  <td><button class="lot-link" data-detail-id="${row.id}">${escapeHtml(row.lot_number)}</button></td>
+                  <td>${escapeHtml(flavorName(row.flavor_code))} · ${row.size_ml} ml</td>
+                  <td>${formatNumber(row.quantity)}</td>
+                  <td>${escapeHtml(formatDate(row.production_date))}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function filteredJournalLots() {
+      const query = el("searchInput").value.trim().toLowerCase();
+      const statusValue = el("statusFilter").value;
+
+      return lots.filter(row => {
+        if (statusValue !== "all" && row.status !== statusValue) return false;
+
+        if (!query) return true;
+
+        return [
+          row.lot_number,
+          row.production_date,
+          periodName(row.production_period),
+          row.flavor_code,
+          flavorName(row.flavor_code),
+          row.size_ml,
+          row.quantity,
+          row.best_before,
+          operatorName(row.operator_id, row.operator_name),
+          row.note,
+          row.void_reason,
+          row.status
+        ].some(value => String(value ?? "").toLowerCase().includes(query));
+      });
+    }
+
+    function renderJournal() {
+      const rows = filteredJournalLots();
+
+      if (!rows.length) {
+        el("lotsTable").innerHTML = `<div class="empty">Nincs megjeleníthető tétel.</div>`;
+        return;
+      }
+
+      el("lotsTable").innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>LOT</th><th>Státusz</th><th>Gyártás</th><th>Íz</th>
+                <th>Méret</th><th>Db</th><th>Lejárat</th><th>Felelős</th>
+                <th>Megjegyzés / sztornó indok</th><th>Művelet</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr class="${row.status === "void" ? "row-void" : ""}">
+                  <td><button class="lot-link" data-detail-id="${row.id}">${escapeHtml(row.lot_number)}</button></td>
+                  <td>
+                    <span class="badge ${row.status === "void" ? "badge-void" : "badge-active"}">
+                      ${row.status === "void" ? "Sztornózott" : "Aktív"}
+                    </span>
+                  </td>
+                  <td>${escapeHtml(formatDate(row.production_date))}<br><span class="sub">${escapeHtml(periodName(row.production_period))}</span></td>
+                  <td>${escapeHtml(flavorName(row.flavor_code))}<br><span class="sub">${escapeHtml(row.flavor_code)}</span></td>
+                  <td>${row.size_ml} ml</td>
+                  <td>${formatNumber(row.quantity)}</td>
+                  <td>${escapeHtml(formatDate(row.best_before))}</td>
+                  <td>${escapeHtml(operatorName(row.operator_id, row.operator_name))}</td>
+                  <td>
+                    ${escapeHtml(row.status === "void" ? (row.void_reason || "—") : (row.note || "—"))}
+                    ${row.status === "void" && row.voided_at ? `<br><span class="sub">${escapeHtml(new Date(row.voided_at).toLocaleString("hu-HU"))}</span>` : ""}
+                  </td>
+                  <td>
+                    ${row.status === "active"
+                      ? `<button class="btn danger" data-void-id="${row.id}">Sztornózás</button>`
+                      : "—"}
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function openVoidModal(id) {
+      const row = lots.find(l => String(l.id) === String(id));
+      if (!row || row.status !== "active") return;
+
+      selectedVoidLot = row;
+      el("voidLotInterpretation").innerHTML = interpretationHtml(row);
+      el("voidReasonType").value = "";
+      el("voidReasonDetail").value = "";
+      el("voidModal").classList.remove("hidden");
+    }
+
+    function composedVoidReason() {
+      const type = el("voidReasonType").value;
+      const detail = el("voidReasonDetail").value.trim();
+
+      if (!type) return "";
+      if (type === "Egyéb") return detail;
+      return detail ? `${type} – ${detail}` : type;
+    }
+
+    async function confirmVoid() {
+      if (!selectedVoidLot) return;
+
+      const reason = composedVoidReason();
+
+      if (reason.length < 5) {
+        alert("Adj meg érvényes sztornózási indokot.");
+        return;
+      }
+
+      el("confirmVoidBtn").disabled = true;
+
+      const { error } = await supabase.rpc("void_gellamille_lot", {
+        p_lot_id: selectedVoidLot.id,
+        p_reason: reason
+      });
+
+      el("confirmVoidBtn").disabled = false;
+
+      if (error) {
+        alert("A sztornózás sikertelen: " + error.message);
+        return;
+      }
+
+      el("voidModal").classList.add("hidden");
+      selectedVoidLot = null;
+      await loadLots();
+      setTab("journal");
+      status(el("journalStatus"), "A LOT sztornózása megtörtént és naplózásra került.", "ok");
+    }
+
+    function openDetail(id) {
+      const row = lots.find(l => String(l.id) === String(id));
+      if (!row) return;
+
+      el("detailTitle").textContent = `${row.lot_number} adatlap`;
+      el("detailInterpretation").innerHTML = interpretationHtml(row);
+
+      const fields = [
+        ["Státusz", row.status === "void" ? "Sztornózott" : "Aktív"],
+        ["Íz", flavorName(row.flavor_code)],
+        ["Kiszerelés", `${row.size_ml} ml`],
+        ["Éves terméksorszám", String(row.batch_no).padStart(4,"0")],
+        ["Gyártás dátuma", formatDate(row.production_date)],
+        ["Gyártási időszak", periodName(row.production_period)],
+        ["Darabszám", `${formatNumber(row.quantity)} db`],
+        ["Lejárat", formatDate(row.best_before)],
+        ["Felelős", operatorName(row.operator_id, row.operator_name)],
+        ["Megjegyzés", row.note || "—"],
+        ["Létrehozva", new Date(row.created_at).toLocaleString("hu-HU")],
+        ["Sztornó indoka", row.void_reason || "—"],
+        ["Sztornózva", row.voided_at ? new Date(row.voided_at).toLocaleString("hu-HU") : "—"]
+      ];
+
+      el("detailContent").innerHTML = fields.map(([label,value]) => `
+        <div class="detail-item">
+          <small>${escapeHtml(label)}</small>
+          <strong>${escapeHtml(value)}</strong>
+        </div>
+      `).join("");
+
+      el("detailModal").classList.remove("hidden");
+    }
+
+    function dateKey(dateString) {
+      return dateString;
+    }
+
+    function startOfWeek(date) {
+      const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const day = copy.getDay() || 7;
+      copy.setDate(copy.getDate() - day + 1);
+      return copy;
+    }
+
+    function isoDate(date) {
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+    }
+
+    function weekKey(dateString) {
+      return isoDate(startOfWeek(parseDate(dateString)));
+    }
+
+    function monthKey(dateString) {
+      return dateString.slice(0,7);
+    }
+
+    function applyAnalyticsPreset(preset) {
+      const today = parseDate(localDate());
+      let from = "";
+      let to = localDate();
+
+      if (preset === "today") {
+        from = to;
+      } else if (preset === "current_week") {
+        from = isoDate(startOfWeek(today));
+      } else if (preset === "previous_week") {
+        const currentStart = startOfWeek(today);
+        const previousStart = new Date(currentStart);
+        previousStart.setDate(previousStart.getDate() - 7);
+        const previousEnd = new Date(currentStart);
+        previousEnd.setDate(previousEnd.getDate() - 1);
+        from = isoDate(previousStart);
+        to = isoDate(previousEnd);
+      } else if (preset === "current_month") {
+        from = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-01`;
+      } else if (preset === "previous_month") {
+        const startCurrent = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endPrevious = new Date(startCurrent);
+        endPrevious.setDate(0);
+        from = `${endPrevious.getFullYear()}-${String(endPrevious.getMonth()+1).padStart(2,"0")}-01`;
+        to = isoDate(endPrevious);
+      } else if (preset === "all") {
+        const dates = lots.map(l => l.production_date).filter(Boolean).sort();
+        from = dates[0] || localDate();
+        to = dates[dates.length - 1] || localDate();
+      } else if (preset === "custom") {
+        return;
+      }
+
+      el("analyticsFrom").value = from;
+      el("analyticsTo").value = to;
+      renderAnalytics();
+    }
+
+    function analyticsLots() {
+      const from = el("analyticsFrom").value;
+      const to = el("analyticsTo").value;
+
+      return lots.filter(row => {
+        if (from && row.production_date < from) return false;
+        if (to && row.production_date > to) return false;
+        return true;
+      });
+    }
+
+    function aggregate(rows, keyFn) {
+      const map = new Map();
+
+      for (const row of rows) {
+        const key = keyFn(row);
+        const current = map.get(key) || { key, activeLots:0, voidedLots:0, units:0 };
+
+        if (row.status === "active") {
+          current.activeLots += 1;
+          current.units += Number(row.quantity || 0);
+        } else {
+          current.voidedLots += 1;
+        }
+
+        map.set(key, current);
+      }
+
+      return [...map.values()].sort((a,b) => a.key.localeCompare(b.key));
+    }
+
+    function renderSummaryTable(targetId, rows, labelTitle, labelFormatter = value => value) {
+      if (!rows.length) {
+        el(targetId).innerHTML = `<div class="empty">Nincs adat a kiválasztott időszakban.</div>`;
+        return;
+      }
+
+      el(targetId).innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>${escapeHtml(labelTitle)}</th><th>Aktív LOT</th><th>Darabszám</th><th>Sztornózott</th></tr></thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td>${escapeHtml(labelFormatter(row.key))}</td>
+                  <td>${formatNumber(row.activeLots)}</td>
+                  <td>${formatNumber(row.units)}</td>
+                  <td>${formatNumber(row.voidedLots)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function renderProductBars(rows) {
+      const products = aggregate(rows, row => `${row.flavor_code}|${row.size_ml}`)
+        .sort((a,b) => b.units - a.units);
+
+      if (!products.length) {
+        el("productBars").innerHTML = `<div class="empty">Nincs aktív termelési adat.</div>`;
+        return;
+      }
+
+      const max = Math.max(...products.map(p => p.units), 1);
+
+      el("productBars").innerHTML = products.map(item => {
+        const [code,size] = item.key.split("|");
+        const percentage = (item.units / max) * 100;
+        return `
+          <div class="bar-row">
+            <div>${escapeHtml(flavorName(code))} · ${size} ml</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${percentage}%"></div></div>
+            <div class="bar-value">${formatNumber(item.units)} db</div>
+          </div>`;
+      }).join("");
+    }
+
+    function renderProductTable(rows) {
+      const products = aggregate(rows, row => `${row.flavor_code}|${row.size_ml}`)
+        .sort((a,b) => b.units - a.units);
+
+      if (!products.length) {
+        el("productAnalytics").innerHTML = `<div class="empty">Nincs adat.</div>`;
+        return;
+      }
+
+      el("productAnalytics").innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Termék</th><th>Kiszerelés</th><th>Aktív LOT</th><th>Darabszám</th><th>Sztornózott</th></tr></thead>
+            <tbody>
+              ${products.map(item => {
+                const [code,size] = item.key.split("|");
+                return `
+                  <tr>
+                    <td>${escapeHtml(flavorName(code))} <span class="sub">(${escapeHtml(code)})</span></td>
+                    <td>${escapeHtml(size)} ml</td>
+                    <td>${formatNumber(item.activeLots)}</td>
+                    <td>${formatNumber(item.units)}</td>
+                    <td>${formatNumber(item.voidedLots)}</td>
+                  </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function renderAnalytics() {
+      const rows = analyticsLots();
+      const activeRows = rows.filter(r => r.status === "active");
+      const voidRows = rows.filter(r => r.status === "void");
+
+      el("statActiveLots").textContent = formatNumber(activeRows.length);
+      el("statUnits").textContent = formatNumber(activeRows.reduce((sum,row) => sum + Number(row.quantity || 0), 0));
+      el("statVoidedLots").textContent = formatNumber(voidRows.length);
+
+      renderSummaryTable(
+        "dailyAnalytics",
+        aggregate(rows, row => dateKey(row.production_date)),
+        "Dátum",
+        formatDate
+      );
+
+      renderSummaryTable(
+        "weeklyAnalytics",
+        aggregate(rows, row => weekKey(row.production_date)),
+        "Hét kezdete",
+        formatDate
+      );
+
+      renderSummaryTable(
+        "monthlyAnalytics",
+        aggregate(rows, row => monthKey(row.production_date)),
+        "Hónap",
+        value => value.replace("-", ".") + "."
+      );
+
+      renderProductBars(rows);
+      renderProductTable(rows);
+    }
+
+    function csvCell(value) {
+      return `"${String(value ?? "").replaceAll('"','""')}"`;
+    }
+
+    function downloadCsv(filename, header, rows) {
+      const csv = "\uFEFF" + [header, ...rows]
+        .map(row => row.map(csvCell).join(";"))
+        .join("\n");
+
+      const blob = new Blob([csv], { type:"text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportJournal() {
+      const rows = filteredJournalLots();
+
+      downloadCsv(
+        `gellamille-lot-naplo-${localDate()}.csv`,
+        ["LOT","Státusz","Gyártás","Időszak","Íz","Ízkód","Kiszerelés ml","Éves sorszám","Darabszám","Lejárat","Felelős","Megjegyzés","Sztornó indoka","Sztornó ideje","Létrehozva"],
+        rows.map(row => [
+          row.lot_number,
+          row.status === "void" ? "Sztornózott" : "Aktív",
+          row.production_date,
+          periodName(row.production_period),
+          flavorName(row.flavor_code),
+          row.flavor_code,
+          row.size_ml,
+          row.batch_no,
+          row.quantity,
+          row.best_before,
+          operatorName(row.operator_id, row.operator_name),
+          row.note,
+          row.void_reason,
+          row.voided_at,
+          row.created_at
+        ])
+      );
+    }
+
+    function exportAnalytics() {
+      const rows = analyticsLots();
+      const products = aggregate(rows, row => `${row.flavor_code}|${row.size_ml}`);
+
+      downloadCsv(
+        `gellamille-elemzes-${el("analyticsFrom").value}-${el("analyticsTo").value}.csv`,
+        ["Termék","Ízkód","Kiszerelés ml","Aktív LOT","Darabszám","Sztornózott LOT"],
+        products.map(item => {
+          const [code,size] = item.key.split("|");
+          return [flavorName(code),code,size,item.activeLots,item.units,item.voidedLots];
+        })
+      );
+    }
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => setTab(btn.dataset.tab));
+    });
+
+    el("loginBtn").addEventListener("click", login);
+    el("loginPassword").addEventListener("keydown", event => {
+      if (event.key === "Enter") login();
+    });
+    el("logoutBtn").addEventListener("click", logout);
+    el("productionDate").addEventListener("change", refreshExpiryPreview);
+    el("addOperatorBtn").addEventListener("click", addOperator);
+    el("newOperatorName").addEventListener("keydown", event => {
+      if (event.key === "Enter") addOperator();
+    });
+    el("createLotBtn").addEventListener("click", openCreateConfirm);
+    el("cancelCreateBtn").addEventListener("click", () => el("confirmModal").classList.add("hidden"));
+    el("confirmCreateBtn").addEventListener("click", createLot);
+    el("copyLotBtn").addEventListener("click", async () => {
+      await navigator.clipboard.writeText(el("createdLot").textContent);
+      status(el("createStatus"), "LOT-szám kimásolva.", "ok");
+    });
+    el("openCreatedDetailBtn").addEventListener("click", () => {
+      if (createdLotRow) openDetail(createdLotRow.id);
+    });
+
+    el("refreshBtn").addEventListener("click", loadLots);
+    el("exportBtn").addEventListener("click", exportJournal);
+    el("searchInput").addEventListener("input", renderJournal);
+    el("statusFilter").addEventListener("change", renderJournal);
+
+    el("lotsTable").addEventListener("click", event => {
+      const voidButton = event.target.closest("[data-void-id]");
+      const detailButton = event.target.closest("[data-detail-id]");
+      if (voidButton) openVoidModal(voidButton.dataset.voidId);
+      if (detailButton) openDetail(detailButton.dataset.detailId);
+    });
+
+    el("recentLotsTable").addEventListener("click", event => {
+      const detailButton = event.target.closest("[data-detail-id]");
+      if (detailButton) openDetail(detailButton.dataset.detailId);
+    });
+
+    el("cancelVoidBtn").addEventListener("click", () => {
+      el("voidModal").classList.add("hidden");
+      selectedVoidLot = null;
+    });
+    el("confirmVoidBtn").addEventListener("click", confirmVoid);
+    el("closeDetailBtn").addEventListener("click", () => el("detailModal").classList.add("hidden"));
+
+    el("analyticsPreset").addEventListener("change", event => applyAnalyticsPreset(event.target.value));
+    el("analyticsFrom").addEventListener("change", () => {
+      el("analyticsPreset").value = "custom";
+      renderAnalytics();
+    });
+    el("analyticsTo").addEventListener("change", () => {
+      el("analyticsPreset").value = "custom";
+      renderAnalytics();
+    });
+    el("analyticsExportBtn").addEventListener("click", exportAnalytics);
+
+    ["confirmModal","voidModal","detailModal"].forEach(id => {
+      el(id).addEventListener("click", event => {
+        if (event.target === el(id)) el(id).classList.add("hidden");
+      });
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        el("confirmModal").classList.add("hidden");
+        el("voidModal").classList.add("hidden");
+        el("detailModal").classList.add("hidden");
+      }
+    });
+
+    const { data: { session } } = await supabase.auth.getSession();
+    await showSession(session);
+
+    supabase.auth.onAuthStateChange((_event, newSession) => {
+      setTimeout(() => showSession(newSession), 0);
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+    }
+  </script>
+</body>
+</html>
