@@ -12,5 +12,3 @@ A V5 új moduljai:
 - szállítmány sztornózásakor a foglalás felszabadul
 
 A partneri rendelési felület ebben a verzióban nincs benne.
-
-## Telepítés
