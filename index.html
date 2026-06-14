@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#5f6d58" />
-  <meta name="description" content="Gellamille LOT generátor, gyártási napló és termelési elemzés" />
+  <meta name="description" content="Gellamille LOT, készlet, partner és szállítmánykezelő rendszer" />
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./icon-192.png" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
-  <title>Gellamille LOT</title>
+  <title>Gellamille rendszer</title>
   <style>
     :root {
       --bg:#f2f0ea;
-      --card:#ffffff;
+      --card:#fff;
       --text:#20241f;
       --muted:#697167;
       --accent:#5f6d58;
@@ -21,8 +21,11 @@
       --danger:#9b3f3f;
       --danger-bg:#f7eaea;
       --success:#3e704b;
+      --success-bg:#e7f2e8;
       --warning:#8a672a;
       --warning-bg:#fbf3df;
+      --info:#365d78;
+      --info-bg:#e8f1f7;
       --overlay:rgba(15,20,14,.58);
     }
     * { box-sizing:border-box; }
@@ -37,7 +40,7 @@
     button { cursor:pointer; }
     button:disabled { opacity:.55; cursor:not-allowed; }
     .hidden { display:none !important; }
-    .shell { max-width:1240px; margin:auto; padding:22px 16px 60px; }
+    .shell { max-width:1360px; margin:auto; padding:22px 16px 60px; }
     .topbar {
       display:flex;
       align-items:center;
@@ -98,6 +101,12 @@
       gap:18px;
       align-items:start;
     }
+    .grid-equal {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      align-items:start;
+    }
     .fields {
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -137,10 +146,13 @@
       padding:11px 15px;
       font-weight:800;
     }
+    .btn-small { padding:7px 10px; font-size:12px; }
     .primary { background:var(--accent); color:#fff; }
     .secondary { background:#edf0ea; color:var(--text); }
     .ghost { background:transparent; border:1px solid var(--border); color:var(--text); }
     .danger { background:var(--danger-bg); color:var(--danger); }
+    .success { background:var(--success-bg); color:var(--success); }
+    .warning { background:var(--warning-bg); color:var(--warning); }
     .status { min-height:22px; margin-top:11px; font-size:13px; }
     .ok { color:var(--success); }
     .error { color:var(--danger); }
@@ -230,22 +242,24 @@
       font-size:10px;
       font-weight:900;
     }
-    .badge-active { background:#e7f2e8; color:var(--success); }
+    .badge-active,.badge-shipped { background:var(--success-bg); color:var(--success); }
     .badge-void { background:var(--danger-bg); color:var(--danger); }
-    .lot-link {
+    .badge-draft { background:var(--warning-bg); color:var(--warning); }
+    .badge-closed { background:var(--info-bg); color:var(--info); }
+    .lot-link,.text-link {
       border:0;
       background:transparent;
       padding:0;
       color:var(--text);
       font-weight:900;
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
       text-decoration:underline;
       text-decoration-style:dotted;
       text-underline-offset:3px;
     }
+    .lot-link { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
     .stats {
       display:grid;
-      grid-template-columns:repeat(3,1fr);
+      grid-template-columns:repeat(4,1fr);
       gap:12px;
       margin-bottom:18px;
     }
@@ -294,7 +308,7 @@
       background:var(--overlay);
     }
     .modal {
-      width:min(560px,100%);
+      width:min(620px,100%);
       max-height:90vh;
       overflow:auto;
       background:#fff;
@@ -302,6 +316,7 @@
       padding:22px;
       box-shadow:0 24px 80px rgba(0,0,0,.28);
     }
+    .modal-wide { width:min(980px,100%); }
     .modal h2 { font-size:21px; line-height:1.3; margin-bottom:10px; }
     .modal-summary {
       margin-top:14px;
@@ -344,15 +359,51 @@
     }
     .detail-item small { display:block; color:var(--muted); margin-bottom:4px; }
     .detail-item strong { font-size:13px; overflow-wrap:anywhere; }
-    @media(max-width:920px) {
-      .grid-two,.analytics-grid { grid-template-columns:1fr; }
-      .stats { grid-template-columns:1fr; }
+    .shipment-layout {
+      display:grid;
+      grid-template-columns:1.25fr .75fr;
+      gap:18px;
+      align-items:start;
+    }
+    .shipment-header {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:15px;
+    }
+    .shipment-number { font-size:24px; font-weight:900; letter-spacing:-.03em; }
+    .panel-soft {
+      padding:14px;
+      border-radius:13px;
+      background:#f7f8f5;
+      border:1px solid var(--border);
+    }
+    .stock-positive { color:var(--success); font-weight:900; }
+    .stock-zero { color:var(--muted); font-weight:900; }
+    .stock-warning { color:var(--warning); font-weight:900; }
+    .partner-card {
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:15px;
+      background:#fff;
+    }
+    .partner-card + .partner-card { margin-top:10px; }
+    .partner-title { font-size:17px; font-weight:900; }
+    .partner-meta { color:var(--muted); font-size:12px; line-height:1.5; margin-top:5px; }
+    .section-gap { margin-top:18px; }
+    @media(max-width:1000px) {
+      .grid-two,.grid-equal,.analytics-grid,.shipment-layout { grid-template-columns:1fr; }
+      .stats { grid-template-columns:1fr 1fr; }
       .fields { grid-template-columns:1fr; }
       .full { grid-column:auto; }
       .topbar { align-items:flex-start; }
       .userbox { flex-direction:column; align-items:flex-end; }
-      .bar-row { grid-template-columns:110px 1fr 65px; }
       .detail-grid { grid-template-columns:1fr; }
+    }
+    @media(max-width:620px) {
+      .stats { grid-template-columns:1fr; }
+      .bar-row { grid-template-columns:105px 1fr 62px; }
     }
   </style>
 </head>
@@ -362,8 +413,8 @@
       <div class="brand" style="margin-bottom:22px">
         <div class="brandmark">GM</div>
         <div>
-          <h1>Gellamille LOT</h1>
-          <div class="sub">Központi gyártási rendszer</div>
+          <h1>Gellamille</h1>
+          <div class="sub">Gyártási és készletkezelő rendszer</div>
         </div>
       </div>
       <h2>Belépés</h2>
@@ -385,8 +436,8 @@
       <div class="brand">
         <div class="brandmark">GM</div>
         <div>
-          <h1>Gellamille LOT</h1>
-          <div class="sub">LOT-generátor · gyártási napló · elemzés</div>
+          <h1>Gellamille</h1>
+          <div class="sub">LOT · készlet · szállítmány · partner</div>
         </div>
       </div>
       <div class="userbox">
@@ -398,6 +449,9 @@
     <nav class="tabs" aria-label="Fő navigáció">
       <button class="tab-btn active" data-tab="create">Új LOT</button>
       <button class="tab-btn" data-tab="journal">Gyártási napló</button>
+      <button class="tab-btn" data-tab="inventory">Készlet</button>
+      <button class="tab-btn" data-tab="shipments">Szállítmányok</button>
+      <button class="tab-btn" data-tab="partners">Partnerek</button>
       <button class="tab-btn" data-tab="analytics">Elemzés</button>
     </nav>
 
@@ -405,13 +459,11 @@
       <div class="grid-two">
         <div class="card">
           <h2>Új gyártási tétel</h2>
-
           <div class="fields">
             <div>
               <label class="required" for="productionDate">Gyártás dátuma</label>
               <input id="productionDate" type="date" />
             </div>
-
             <div>
               <label class="required" for="productionPeriod">Gyártási időszak</label>
               <select id="productionPeriod">
@@ -419,12 +471,10 @@
                 <option value="PM">Délután</option>
               </select>
             </div>
-
             <div class="full">
               <label class="required" for="flavorCode">Íz</label>
               <select id="flavorCode"></select>
             </div>
-
             <div>
               <label class="required" for="sizeMl">Kiszerelés</label>
               <select id="sizeMl">
@@ -432,22 +482,18 @@
                 <option value="300">300 ml</option>
               </select>
             </div>
-
             <div>
               <label for="bestBeforePreview">Automatikus lejárat</label>
               <input id="bestBeforePreview" type="date" readonly />
             </div>
-
             <div>
               <label class="required" for="quantity">Gyártott darabszám</label>
               <input id="quantity" type="number" min="1" step="1" placeholder="pl. 1200" />
             </div>
-
             <div>
               <label class="required" for="operatorId">Gyártásért felelős</label>
               <select id="operatorId"></select>
             </div>
-
             <div class="full">
               <label for="newOperatorName">Új felelős személy hozzáadása</label>
               <div class="inline-add">
@@ -455,24 +501,19 @@
                 <button id="addOperatorBtn" class="btn secondary">Hozzáadás</button>
               </div>
             </div>
-
             <div class="full">
               <label for="note">Megjegyzés</label>
               <textarea id="note" placeholder="Opcionális gyártási megjegyzés"></textarea>
             </div>
           </div>
-
           <div class="format-box">
             <strong>FDP15-26-0012</strong>
             Ízkód + kiszerelés + év + termékenkénti éves sorszám
           </div>
-
           <div class="actions">
             <button id="createLotBtn" class="btn primary">LOT létrehozása</button>
           </div>
-
           <div id="createStatus" class="status"></div>
-
           <div id="resultBox" class="result hidden">
             <small>Létrehozott LOT-szám</small>
             <strong id="createdLot"></strong>
@@ -483,7 +524,6 @@
             </div>
           </div>
         </div>
-
         <div class="card">
           <h2>Utolsó aktív LOT-ok</h2>
           <div id="recentLotsTable"></div>
@@ -500,7 +540,6 @@
             <button id="exportBtn" class="btn secondary">CSV export</button>
           </div>
         </div>
-
         <div class="toolbar">
           <div class="toolbar-group" style="width:100%">
             <div style="flex:1;min-width:220px">
@@ -517,9 +556,145 @@
             </div>
           </div>
         </div>
-
         <div id="journalStatus" class="status"></div>
         <div id="lotsTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-inventory" class="tab-panel hidden">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Aktív készlet összesen</div>
+          <div id="inventoryPhysical" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Lefoglalt</div>
+          <div id="inventoryReserved" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Kiszállított</div>
+          <div id="inventoryShipped" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Elérhető</div>
+          <div id="inventoryAvailable" class="stat-value">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="toolbar">
+          <h2 style="margin:0">LOT-alapú készlet</h2>
+          <button id="inventoryExportBtn" class="btn secondary">Készlet CSV</button>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-group" style="width:100%">
+            <div style="flex:1;min-width:220px">
+              <label for="inventorySearch">Keresés</label>
+              <input id="inventorySearch" placeholder="LOT vagy termék" />
+            </div>
+            <div>
+              <label for="inventoryFlavorFilter">Íz</label>
+              <select id="inventoryFlavorFilter">
+                <option value="all">Minden íz</option>
+              </select>
+            </div>
+            <div>
+              <label for="inventoryAvailabilityFilter">Készlet</label>
+              <select id="inventoryAvailabilityFilter">
+                <option value="all">Minden aktív LOT</option>
+                <option value="available">Csak elérhető készlettel</option>
+                <option value="empty">Csak kifogyott</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="inventoryTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-shipments" class="tab-panel hidden">
+      <div class="card">
+        <div class="toolbar">
+          <h2 style="margin:0">Szállítmányok</h2>
+          <button id="newShipmentBtn" class="btn primary">Új szállítmány</button>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-group" style="width:100%">
+            <div style="flex:1;min-width:220px">
+              <label for="shipmentSearch">Keresés</label>
+              <input id="shipmentSearch" placeholder="Szállítmány, partner, rendelési szám" />
+            </div>
+            <div>
+              <label for="shipmentStatusFilter">Státusz</label>
+              <select id="shipmentStatusFilter">
+                <option value="all">Minden státusz</option>
+                <option value="draft">Piszkozat</option>
+                <option value="closed">Lezárt</option>
+                <option value="shipped">Kiszállítva</option>
+                <option value="void">Sztornózott</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div id="shipmentStatusMessage" class="status"></div>
+        <div id="shipmentsTable"></div>
+      </div>
+
+      <div id="shipmentBuilder" class="card section-gap hidden">
+        <div id="shipmentBuilderContent"></div>
+      </div>
+    </section>
+
+    <section id="tab-partners" class="tab-panel hidden">
+      <div class="grid-two">
+        <div class="card">
+          <h2>Új partner</h2>
+          <div class="fields">
+            <div class="full">
+              <label class="required" for="partnerName">Partner neve</label>
+              <input id="partnerName" placeholder="pl. Kifli" />
+            </div>
+            <div>
+              <label for="partnerBillingName">Számlázási név</label>
+              <input id="partnerBillingName" />
+            </div>
+            <div>
+              <label for="partnerTaxNumber">Adószám</label>
+              <input id="partnerTaxNumber" />
+            </div>
+            <div class="full">
+              <label for="partnerShippingAddress">Szállítási cím</label>
+              <textarea id="partnerShippingAddress"></textarea>
+            </div>
+            <div>
+              <label for="partnerContactName">Kapcsolattartó</label>
+              <input id="partnerContactName" />
+            </div>
+            <div>
+              <label for="partnerEmail">E-mail</label>
+              <input id="partnerEmail" type="email" />
+            </div>
+            <div>
+              <label for="partnerPhone">Telefonszám</label>
+              <input id="partnerPhone" />
+            </div>
+            <div class="full">
+              <label for="partnerNote">Megjegyzés</label>
+              <textarea id="partnerNote"></textarea>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="createPartnerBtn" class="btn primary">Partner létrehozása</button>
+          </div>
+          <div id="partnerStatus" class="status"></div>
+        </div>
+
+        <div class="card">
+          <div class="toolbar">
+            <h2 style="margin:0">Meglévő partnerek</h2>
+            <input id="partnerSearch" style="max-width:260px" placeholder="Partner keresése" />
+          </div>
+          <div id="partnersList"></div>
+        </div>
       </div>
     </section>
 
@@ -529,7 +704,6 @@
           <h2 style="margin:0">Termelési elemzés</h2>
           <button id="analyticsExportBtn" class="btn secondary">Elemzés CSV</button>
         </div>
-
         <div class="toolbar">
           <div class="toolbar-group">
             <div>
@@ -554,8 +728,7 @@
             </div>
           </div>
         </div>
-
-        <div class="stats">
+        <div class="stats" style="grid-template-columns:repeat(3,1fr)">
           <div class="stat">
             <div class="stat-label">Aktív LOT-ok száma</div>
             <div id="statActiveLots" class="stat-value">0</div>
@@ -569,28 +742,23 @@
             <div id="statVoidedLots" class="stat-value">0</div>
           </div>
         </div>
-
         <div class="analytics-grid">
           <div class="card" style="box-shadow:none">
             <h3>Napi bontás</h3>
             <div id="dailyAnalytics"></div>
           </div>
-
           <div class="card" style="box-shadow:none">
             <h3>Termékenkénti darabszám</h3>
             <div id="productBars" class="bars"></div>
           </div>
-
           <div class="card" style="box-shadow:none">
             <h3>Heti bontás</h3>
             <div id="weeklyAnalytics"></div>
           </div>
-
           <div class="card" style="box-shadow:none">
             <h3>Havi bontás</h3>
             <div id="monthlyAnalytics"></div>
           </div>
-
           <div class="card" style="box-shadow:none;grid-column:1/-1">
             <h3>Termékenkénti összesítés</h3>
             <div id="productAnalytics"></div>
@@ -615,7 +783,6 @@
     <div class="modal">
       <h2>LOT sztornózása</h2>
       <div id="voidLotInterpretation"></div>
-
       <div style="margin-top:16px">
         <label class="required" for="voidReasonType">Sztornózás oka</label>
         <select id="voidReasonType">
@@ -628,16 +795,10 @@
           <option value="Egyéb">Egyéb</option>
         </select>
       </div>
-
       <div style="margin-top:12px">
         <label for="voidReasonDetail">Részletes indoklás</label>
-        <textarea id="voidReasonDetail" placeholder="Röviden írd le, miért kell sztornózni"></textarea>
+        <textarea id="voidReasonDetail"></textarea>
       </div>
-
-      <p class="note">
-        A sztornózott LOT megmarad a naplóban, nem számít bele az aktív termelési adatokba, és a sorszáma nem használható fel újra.
-      </p>
-
       <div class="modal-actions">
         <button id="cancelVoidBtn" class="btn secondary">Mégse</button>
         <button id="confirmVoidBtn" class="btn danger">LOT sztornózása</button>
@@ -646,12 +807,75 @@
   </div>
 
   <div id="detailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
-    <div class="modal">
+    <div class="modal modal-wide">
       <h2 id="detailTitle">LOT adatlap</h2>
       <div id="detailInterpretation"></div>
       <div id="detailContent" class="detail-grid"></div>
+      <div id="detailAllocations" class="section-gap"></div>
       <div class="modal-actions">
         <button id="closeDetailBtn" class="btn secondary">Bezárás</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="newShipmentModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2>Új szállítmány</h2>
+      <div class="fields">
+        <div class="full">
+          <label class="required" for="newShipmentPartner">Partner</label>
+          <select id="newShipmentPartner"></select>
+        </div>
+        <div>
+          <label class="required" for="newShipmentDate">Szállítás dátuma</label>
+          <input id="newShipmentDate" type="date" />
+        </div>
+        <div>
+          <label for="newShipmentOrderNumber">Partner rendelési száma</label>
+          <input id="newShipmentOrderNumber" />
+        </div>
+        <div>
+          <label for="newShipmentDeliveryNote">Szállítólevél száma</label>
+          <input id="newShipmentDeliveryNote" />
+        </div>
+        <div class="full">
+          <label for="newShipmentAddress">Szállítási cím</label>
+          <textarea id="newShipmentAddress"></textarea>
+        </div>
+        <div class="full">
+          <label for="newShipmentNote">Megjegyzés</label>
+          <textarea id="newShipmentNote"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="cancelNewShipmentBtn" class="btn secondary">Mégse</button>
+        <button id="createShipmentBtn" class="btn primary">Piszkozat létrehozása</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="voidShipmentModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2>Szállítmány sztornózása</h2>
+      <div id="voidShipmentSummary" class="modal-summary"></div>
+      <div style="margin-top:14px">
+        <label class="required" for="voidShipmentReason">Sztornózás indoka</label>
+        <textarea id="voidShipmentReason"></textarea>
+      </div>
+      <p class="note">A lefoglalt készlet felszabadul. Kiszállított szállítmány nem sztornózható.</p>
+      <div class="modal-actions">
+        <button id="cancelVoidShipmentBtn" class="btn secondary">Mégse</button>
+        <button id="confirmVoidShipmentBtn" class="btn danger">Szállítmány sztornózása</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="partnerDetailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal modal-wide">
+      <h2 id="partnerDetailTitle">Partner adatlap</h2>
+      <div id="partnerDetailContent"></div>
+      <div class="modal-actions">
+        <button id="closePartnerDetailBtn" class="btn secondary">Bezárás</button>
       </div>
     </div>
   </div>
@@ -664,11 +888,18 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
     const el = id => document.getElementById(id);
+
     let flavors = [];
     let operators = [];
     let lots = [];
+    let partners = [];
+    let shipments = [];
+    let shipmentItems = [];
+
     let selectedVoidLot = null;
     let createdLotRow = null;
+    let selectedShipmentId = null;
+    let selectedVoidShipmentId = null;
 
     function localDate() {
       const now = new Date();
@@ -733,8 +964,21 @@
       return operators.find(o => String(o.id) === String(id))?.name || fallback || "—";
     }
 
-    function sizeCode(sizeMl) {
-      return Number(sizeMl) === 300 ? "30" : "15";
+    function partnerName(id) {
+      return partners.find(p => String(p.id) === String(id))?.name || "Ismeretlen partner";
+    }
+
+    function shipmentStatusName(value) {
+      return {
+        draft:"Piszkozat",
+        closed:"Lezárt",
+        shipped:"Kiszállítva",
+        void:"Sztornózott"
+      }[value] || value;
+    }
+
+    function shipmentStatusBadge(value) {
+      return `<span class="badge badge-${escapeHtml(value)}">${escapeHtml(shipmentStatusName(value))}</span>`;
     }
 
     function decodeLot(row) {
@@ -761,11 +1005,15 @@
       document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.tab === tabName);
       });
-      document.querySelectorAll(".tab-panel").forEach(panel => {
-        panel.classList.add("hidden");
-      });
+      document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.add("hidden"));
       el(`tab-${tabName}`).classList.remove("hidden");
 
+      if (tabName === "inventory") renderInventory();
+      if (tabName === "shipments") {
+        renderShipments();
+        renderShipmentBuilder();
+      }
+      if (tabName === "partners") renderPartners();
       if (tabName === "analytics") renderAnalytics();
     }
 
@@ -799,15 +1047,31 @@
       flavors = [];
       operators = [];
       lots = [];
+      partners = [];
+      shipments = [];
+      shipmentItems = [];
       el("loginPassword").value = "";
     }
 
     async function initializeApp() {
       el("productionDate").value ||= localDate();
+      el("newShipmentDate").value ||= localDate();
       refreshExpiryPreview();
       applyAnalyticsPreset("current_month");
-      await Promise.all([loadFlavors(), loadOperators()]);
-      await loadLots();
+      await loadAllData();
+    }
+
+    async function loadAllData() {
+      await Promise.all([
+        loadFlavors(),
+        loadOperators(),
+        loadLots(),
+        loadPartners(),
+        loadShipments(),
+        loadShipmentItems()
+      ]);
+
+      renderAll();
     }
 
     async function loadFlavors() {
@@ -823,9 +1087,14 @@
       }
 
       flavors = data || [];
+
       el("flavorCode").innerHTML = flavors
         .map(f => `<option value="${escapeHtml(f.code)}">${escapeHtml(f.name)} (${escapeHtml(f.code)})</option>`)
         .join("");
+
+      el("inventoryFlavorFilter").innerHTML =
+        `<option value="all">Minden íz</option>` +
+        flavors.map(f => `<option value="${escapeHtml(f.code)}">${escapeHtml(f.name)}</option>`).join("");
     }
 
     async function loadOperators(selectId = null) {
@@ -841,11 +1110,84 @@
       }
 
       operators = data || [];
+
       el("operatorId").innerHTML =
         `<option value="">Válassz felelőst</option>` +
         operators.map(o => `<option value="${o.id}">${escapeHtml(o.name)}</option>`).join("");
 
       if (selectId) el("operatorId").value = String(selectId);
+    }
+
+    async function loadLots() {
+      const { data, error } = await supabase
+        .from("lots")
+        .select("id,lot_number,production_date,production_period,flavor_code,size_ml,batch_no,quantity,best_before,operator_id,operator_name,note,status,created_at,created_by,void_reason,voided_at,voided_by")
+        .order("created_at", { ascending:false })
+        .limit(10000);
+
+      if (error) {
+        status(el("journalStatus"), "A LOT napló betöltése sikertelen: " + error.message, "error");
+        return;
+      }
+
+      lots = data || [];
+    }
+
+    async function loadPartners() {
+      const { data, error } = await supabase
+        .from("partners")
+        .select("*")
+        .order("name")
+        .limit(5000);
+
+      if (error) {
+        status(el("partnerStatus"), "A partnerek betöltése sikertelen: " + error.message, "error");
+        return;
+      }
+
+      partners = data || [];
+      refreshPartnerSelects();
+    }
+
+    async function loadShipments() {
+      const { data, error } = await supabase
+        .from("shipments")
+        .select("*")
+        .order("created_at", { ascending:false })
+        .limit(10000);
+
+      if (error) {
+        status(el("shipmentStatusMessage"), "A szállítmányok betöltése sikertelen: " + error.message, "error");
+        return;
+      }
+
+      shipments = data || [];
+    }
+
+    async function loadShipmentItems() {
+      const { data, error } = await supabase
+        .from("shipment_items")
+        .select("*")
+        .order("created_at", { ascending:false })
+        .limit(20000);
+
+      if (error) {
+        status(el("shipmentStatusMessage"), "A szállítmánytételek betöltése sikertelen: " + error.message, "error");
+        return;
+      }
+
+      shipmentItems = data || [];
+    }
+
+    function renderAll() {
+      renderRecentLots();
+      renderJournal();
+      renderInventory();
+      renderPartners();
+      renderShipments();
+      renderShipmentBuilder();
+      renderAnalytics();
+      status(el("journalStatus"), `Napló betöltve: ${lots.length} LOT.`, "ok");
     }
 
     async function addOperator() {
@@ -872,31 +1214,10 @@
       const row = Array.isArray(data) ? data[0] : data;
       el("newOperatorName").value = "";
       await loadOperators(row?.id);
-      status(el("createStatus"), `${row?.name || name} hozzáadva a felelősök listájához.`, "ok");
+      status(el("createStatus"), `${row?.name || name} hozzáadva.`, "ok");
     }
 
-    async function loadLots() {
-      status(el("journalStatus"), "Napló betöltése…");
-
-      const { data, error } = await supabase
-        .from("lots")
-        .select("id,lot_number,production_date,production_period,flavor_code,size_ml,batch_no,quantity,best_before,operator_id,operator_name,note,status,created_at,created_by,void_reason,voided_at,voided_by")
-        .order("created_at", { ascending:false })
-        .limit(5000);
-
-      if (error) {
-        status(el("journalStatus"), "A napló betöltése sikertelen: " + error.message, "error");
-        return;
-      }
-
-      lots = data || [];
-      renderRecentLots();
-      renderJournal();
-      renderAnalytics();
-      status(el("journalStatus"), `Napló betöltve: ${lots.length} tétel.`, "ok");
-    }
-
-    function validateCreate() {
+    function validateCreateLot() {
       if (!el("productionDate").value) {
         status(el("createStatus"), "A gyártási dátum kötelező.", "error");
         return false;
@@ -907,18 +1228,18 @@
       }
       const quantity = Number(el("quantity").value);
       if (!Number.isInteger(quantity) || quantity <= 0) {
-        status(el("createStatus"), "A darabszám kötelező, pozitív egész szám legyen.", "error");
+        status(el("createStatus"), "A darabszám pozitív egész szám legyen.", "error");
         return false;
       }
       if (!el("operatorId").value) {
-        status(el("createStatus"), "A gyártásért felelős személy kötelező.", "error");
+        status(el("createStatus"), "A felelős személy kötelező.", "error");
         return false;
       }
       return true;
     }
 
     function openCreateConfirm() {
-      if (!validateCreate()) return;
+      if (!validateCreateLot()) return;
 
       const flavor = flavors.find(f => f.code === el("flavorCode").value);
       const operator = operators.find(o => String(o.id) === String(el("operatorId").value));
@@ -968,7 +1289,7 @@
       el("note").value = "";
       status(el("createStatus"), "A LOT-szám sikeresen létrejött.", "ok");
 
-      await loadLots();
+      await loadAllData();
     }
 
     function renderRecentLots() {
@@ -1003,22 +1324,13 @@
 
       return lots.filter(row => {
         if (statusValue !== "all" && row.status !== statusValue) return false;
-
         if (!query) return true;
 
         return [
-          row.lot_number,
-          row.production_date,
-          periodName(row.production_period),
-          row.flavor_code,
-          flavorName(row.flavor_code),
-          row.size_ml,
-          row.quantity,
-          row.best_before,
-          operatorName(row.operator_id, row.operator_name),
-          row.note,
-          row.void_reason,
-          row.status
+          row.lot_number,row.production_date,periodName(row.production_period),
+          row.flavor_code,flavorName(row.flavor_code),row.size_ml,row.quantity,
+          row.best_before,operatorName(row.operator_id,row.operator_name),
+          row.note,row.void_reason,row.status
         ].some(value => String(value ?? "").toLowerCase().includes(query));
       });
     }
@@ -1045,26 +1357,15 @@
               ${rows.map(row => `
                 <tr class="${row.status === "void" ? "row-void" : ""}">
                   <td><button class="lot-link" data-detail-id="${row.id}">${escapeHtml(row.lot_number)}</button></td>
-                  <td>
-                    <span class="badge ${row.status === "void" ? "badge-void" : "badge-active"}">
-                      ${row.status === "void" ? "Sztornózott" : "Aktív"}
-                    </span>
-                  </td>
+                  <td><span class="badge ${row.status === "void" ? "badge-void" : "badge-active"}">${row.status === "void" ? "Sztornózott" : "Aktív"}</span></td>
                   <td>${escapeHtml(formatDate(row.production_date))}<br><span class="sub">${escapeHtml(periodName(row.production_period))}</span></td>
                   <td>${escapeHtml(flavorName(row.flavor_code))}<br><span class="sub">${escapeHtml(row.flavor_code)}</span></td>
                   <td>${row.size_ml} ml</td>
                   <td>${formatNumber(row.quantity)}</td>
                   <td>${escapeHtml(formatDate(row.best_before))}</td>
-                  <td>${escapeHtml(operatorName(row.operator_id, row.operator_name))}</td>
-                  <td>
-                    ${escapeHtml(row.status === "void" ? (row.void_reason || "—") : (row.note || "—"))}
-                    ${row.status === "void" && row.voided_at ? `<br><span class="sub">${escapeHtml(new Date(row.voided_at).toLocaleString("hu-HU"))}</span>` : ""}
-                  </td>
-                  <td>
-                    ${row.status === "active"
-                      ? `<button class="btn danger" data-void-id="${row.id}">Sztornózás</button>`
-                      : "—"}
-                  </td>
+                  <td>${escapeHtml(operatorName(row.operator_id,row.operator_name))}</td>
+                  <td>${escapeHtml(row.status === "void" ? (row.void_reason || "—") : (row.note || "—"))}</td>
+                  <td>${row.status === "active" ? `<button class="btn btn-small danger" data-void-id="${row.id}">Sztornózás</button>` : "—"}</td>
                 </tr>
               `).join("")}
             </tbody>
@@ -1072,9 +1373,622 @@
         </div>`;
     }
 
-    function openVoidModal(id) {
+    function stockForLot(lotId) {
+      const lot = lots.find(l => String(l.id) === String(lotId));
+      if (!lot) return { produced:0,reserved:0,shipped:0,available:0 };
+
+      let reserved = 0;
+      let shipped = 0;
+
+      for (const item of shipmentItems.filter(i => String(i.lot_id) === String(lotId))) {
+        const shipment = shipments.find(s => String(s.id) === String(item.shipment_id));
+        if (!shipment || shipment.status === "void") continue;
+        if (shipment.status === "shipped") shipped += Number(item.quantity || 0);
+        if (shipment.status === "draft" || shipment.status === "closed") reserved += Number(item.quantity || 0);
+      }
+
+      const produced = Number(lot.quantity || 0);
+      return {
+        produced,
+        reserved,
+        shipped,
+        available: Math.max(produced - reserved - shipped, 0)
+      };
+    }
+
+    function availableForShipment(lotId, shipmentId) {
+      const lot = lots.find(l => String(l.id) === String(lotId));
+      if (!lot) return 0;
+
+      let allocatedOther = 0;
+
+      for (const item of shipmentItems.filter(i => String(i.lot_id) === String(lotId))) {
+        if (String(item.shipment_id) === String(shipmentId)) continue;
+        const shipment = shipments.find(s => String(s.id) === String(item.shipment_id));
+        if (!shipment || shipment.status === "void") continue;
+        allocatedOther += Number(item.quantity || 0);
+      }
+
+      return Math.max(Number(lot.quantity || 0) - allocatedOther, 0);
+    }
+
+    function filteredInventoryLots() {
+      const query = el("inventorySearch").value.trim().toLowerCase();
+      const flavor = el("inventoryFlavorFilter").value;
+      const availability = el("inventoryAvailabilityFilter").value;
+
+      return lots
+        .filter(l => l.status === "active")
+        .filter(l => flavor === "all" || l.flavor_code === flavor)
+        .filter(l => {
+          const stock = stockForLot(l.id);
+          if (availability === "available" && stock.available <= 0) return false;
+          if (availability === "empty" && stock.available > 0) return false;
+          return true;
+        })
+        .filter(l => {
+          if (!query) return true;
+          return [l.lot_number,l.flavor_code,flavorName(l.flavor_code),l.size_ml]
+            .some(v => String(v).toLowerCase().includes(query));
+        })
+        .sort((a,b) => String(a.best_before).localeCompare(String(b.best_before)));
+    }
+
+    function renderInventory() {
+      const activeLots = lots.filter(l => l.status === "active");
+      const totalProduced = activeLots.reduce((sum,l) => sum + stockForLot(l.id).produced,0);
+      const totalReserved = activeLots.reduce((sum,l) => sum + stockForLot(l.id).reserved,0);
+      const totalShipped = activeLots.reduce((sum,l) => sum + stockForLot(l.id).shipped,0);
+      const totalAvailable = activeLots.reduce((sum,l) => sum + stockForLot(l.id).available,0);
+
+      el("inventoryPhysical").textContent = formatNumber(Math.max(totalProduced - totalShipped,0));
+      el("inventoryReserved").textContent = formatNumber(totalReserved);
+      el("inventoryShipped").textContent = formatNumber(totalShipped);
+      el("inventoryAvailable").textContent = formatNumber(totalAvailable);
+
+      const rows = filteredInventoryLots();
+
+      if (!rows.length) {
+        el("inventoryTable").innerHTML = `<div class="empty">Nincs megjeleníthető készlet.</div>`;
+        return;
+      }
+
+      el("inventoryTable").innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>LOT</th><th>Termék</th><th>Gyártva</th><th>Lefoglalva</th><th>Kiszállítva</th><th>Elérhető</th><th>Lejárat</th></tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => {
+                const stock = stockForLot(row.id);
+                const cls = stock.available > 0 ? "stock-positive" : "stock-zero";
+                return `
+                  <tr>
+                    <td><button class="lot-link" data-detail-id="${row.id}">${escapeHtml(row.lot_number)}</button></td>
+                    <td>${escapeHtml(flavorName(row.flavor_code))}<br><span class="sub">${row.size_ml} ml</span></td>
+                    <td>${formatNumber(stock.produced)}</td>
+                    <td>${formatNumber(stock.reserved)}</td>
+                    <td>${formatNumber(stock.shipped)}</td>
+                    <td class="${cls}">${formatNumber(stock.available)}</td>
+                    <td>${escapeHtml(formatDate(row.best_before))}</td>
+                  </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    async function createPartner() {
+      const name = el("partnerName").value.trim();
+
+      if (name.length < 2) {
+        status(el("partnerStatus"), "A partner neve kötelező.", "error");
+        return;
+      }
+
+      el("createPartnerBtn").disabled = true;
+
+      const { error } = await supabase.rpc("create_gellamille_partner", {
+        p_name: name,
+        p_billing_name: el("partnerBillingName").value.trim() || null,
+        p_tax_number: el("partnerTaxNumber").value.trim() || null,
+        p_shipping_address: el("partnerShippingAddress").value.trim() || null,
+        p_contact_name: el("partnerContactName").value.trim() || null,
+        p_email: el("partnerEmail").value.trim() || null,
+        p_phone: el("partnerPhone").value.trim() || null,
+        p_note: el("partnerNote").value.trim() || null
+      });
+
+      el("createPartnerBtn").disabled = false;
+
+      if (error) {
+        status(el("partnerStatus"), "A partner létrehozása sikertelen: " + error.message, "error");
+        return;
+      }
+
+      ["partnerName","partnerBillingName","partnerTaxNumber","partnerShippingAddress","partnerContactName","partnerEmail","partnerPhone","partnerNote"]
+        .forEach(id => el(id).value = "");
+
+      await loadAllData();
+      status(el("partnerStatus"), "A partner létrejött.", "ok");
+    }
+
+    function refreshPartnerSelects() {
+      const active = partners.filter(p => p.active);
+      el("newShipmentPartner").innerHTML =
+        `<option value="">Válassz partnert</option>` +
+        active.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("");
+    }
+
+    function filteredPartners() {
+      const query = el("partnerSearch").value.trim().toLowerCase();
+      return partners.filter(p => {
+        if (!query) return true;
+        return [p.name,p.billing_name,p.tax_number,p.contact_name,p.email,p.phone]
+          .some(v => String(v ?? "").toLowerCase().includes(query));
+      });
+    }
+
+    function partnerShipmentStats(partnerId) {
+      const partnerShipments = shipments.filter(s => String(s.partner_id) === String(partnerId) && s.status !== "void");
+      const ids = new Set(partnerShipments.map(s => String(s.id)));
+      const units = shipmentItems
+        .filter(i => ids.has(String(i.shipment_id)))
+        .reduce((sum,i) => sum + Number(i.quantity || 0),0);
+      return { count:partnerShipments.length, units };
+    }
+
+    function renderPartners() {
+      const rows = filteredPartners();
+
+      if (!rows.length) {
+        el("partnersList").innerHTML = `<div class="empty">Még nincs partner.</div>`;
+        return;
+      }
+
+      el("partnersList").innerHTML = rows.map(p => {
+        const stats = partnerShipmentStats(p.id);
+        return `
+          <div class="partner-card">
+            <div class="toolbar" style="margin:0">
+              <div>
+                <div class="partner-title">${escapeHtml(p.name)}</div>
+                <div class="partner-meta">
+                  ${escapeHtml(p.shipping_address || "Nincs szállítási cím")}<br>
+                  ${escapeHtml(p.contact_name || "Nincs kapcsolattartó")}
+                </div>
+              </div>
+              <button class="btn btn-small secondary" data-partner-detail="${p.id}">Adatlap</button>
+            </div>
+            <div class="partner-meta">
+              ${formatNumber(stats.count)} szállítmány · ${formatNumber(stats.units)} db hozzárendelve
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function openPartnerDetail(partnerId) {
+      const p = partners.find(row => String(row.id) === String(partnerId));
+      if (!p) return;
+
+      const partnerShipments = shipments
+        .filter(s => String(s.partner_id) === String(partnerId))
+        .sort((a,b) => String(b.shipment_date).localeCompare(String(a.shipment_date)));
+
+      el("partnerDetailTitle").textContent = p.name;
+
+      el("partnerDetailContent").innerHTML = `
+        <div class="detail-grid">
+          ${[
+            ["Számlázási név",p.billing_name || "—"],
+            ["Adószám",p.tax_number || "—"],
+            ["Szállítási cím",p.shipping_address || "—"],
+            ["Kapcsolattartó",p.contact_name || "—"],
+            ["E-mail",p.email || "—"],
+            ["Telefonszám",p.phone || "—"],
+            ["Megjegyzés",p.note || "—"],
+            ["Státusz",p.active ? "Aktív" : "Inaktív"]
+          ].map(([label,value]) => `
+            <div class="detail-item">
+              <small>${escapeHtml(label)}</small>
+              <strong>${escapeHtml(value)}</strong>
+            </div>
+          `).join("")}
+        </div>
+        <div class="section-gap">
+          <h3>Szállítmányok</h3>
+          ${partnerShipments.length ? `
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Szállítmány</th><th>Dátum</th><th>Státusz</th><th>LOT</th><th>Darabszám</th></tr></thead>
+                <tbody>
+                  ${partnerShipments.map(s => {
+                    const totals = shipmentTotals(s.id);
+                    return `
+                      <tr>
+                        <td><button class="text-link" data-open-shipment="${s.id}">${escapeHtml(s.shipment_number)}</button></td>
+                        <td>${escapeHtml(formatDate(s.shipment_date))}</td>
+                        <td>${shipmentStatusBadge(s.status)}</td>
+                        <td>${formatNumber(totals.lotCount)}</td>
+                        <td>${formatNumber(totals.units)}</td>
+                      </tr>`;
+                  }).join("")}
+                </tbody>
+              </table>
+            </div>` : `<div class="empty">Nincs szállítmány.</div>`}
+        </div>`;
+
+      el("partnerDetailModal").classList.remove("hidden");
+    }
+
+    function shipmentTotals(shipmentId) {
+      const items = shipmentItems.filter(i => String(i.shipment_id) === String(shipmentId));
+      return {
+        lotCount: items.length,
+        units: items.reduce((sum,i) => sum + Number(i.quantity || 0),0)
+      };
+    }
+
+    function filteredShipments() {
+      const query = el("shipmentSearch").value.trim().toLowerCase();
+      const statusValue = el("shipmentStatusFilter").value;
+
+      return shipments.filter(s => {
+        if (statusValue !== "all" && s.status !== statusValue) return false;
+        if (!query) return true;
+        return [
+          s.shipment_number,partnerName(s.partner_id),s.customer_order_number,
+          s.delivery_note_number,s.shipment_date,s.status
+        ].some(v => String(v ?? "").toLowerCase().includes(query));
+      });
+    }
+
+    function renderShipments() {
+      const rows = filteredShipments();
+
+      if (!rows.length) {
+        el("shipmentsTable").innerHTML = `<div class="empty">Még nincs szállítmány.</div>`;
+        return;
+      }
+
+      el("shipmentsTable").innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Szállítmány</th><th>Partner</th><th>Dátum</th><th>LOT</th><th>Darabszám</th><th>Státusz</th><th></th></tr></thead>
+            <tbody>
+              ${rows.map(s => {
+                const totals = shipmentTotals(s.id);
+                return `
+                  <tr class="${s.status === "void" ? "row-void" : ""}">
+                    <td class="code">${escapeHtml(s.shipment_number)}</td>
+                    <td>${escapeHtml(partnerName(s.partner_id))}</td>
+                    <td>${escapeHtml(formatDate(s.shipment_date))}</td>
+                    <td>${formatNumber(totals.lotCount)}</td>
+                    <td>${formatNumber(totals.units)}</td>
+                    <td>${shipmentStatusBadge(s.status)}</td>
+                    <td><button class="btn btn-small secondary" data-open-shipment="${s.id}">Megnyitás</button></td>
+                  </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function openNewShipmentModal() {
+      if (!partners.some(p => p.active)) {
+        status(el("shipmentStatusMessage"), "Előbb hozz létre legalább egy partnert.", "error");
+        setTab("partners");
+        return;
+      }
+
+      el("newShipmentPartner").value = "";
+      el("newShipmentDate").value = localDate();
+      el("newShipmentAddress").value = "";
+      el("newShipmentOrderNumber").value = "";
+      el("newShipmentDeliveryNote").value = "";
+      el("newShipmentNote").value = "";
+      el("newShipmentModal").classList.remove("hidden");
+    }
+
+    function autofillShipmentAddress() {
+      const p = partners.find(row => String(row.id) === String(el("newShipmentPartner").value));
+      el("newShipmentAddress").value = p?.shipping_address || "";
+    }
+
+    async function createShipment() {
+      const partnerId = Number(el("newShipmentPartner").value);
+      const shipmentDate = el("newShipmentDate").value;
+
+      if (!partnerId || !shipmentDate) {
+        alert("A partner és a szállítás dátuma kötelező.");
+        return;
+      }
+
+      el("createShipmentBtn").disabled = true;
+
+      const { data, error } = await supabase.rpc("create_gellamille_shipment", {
+        p_partner_id: partnerId,
+        p_shipment_date: shipmentDate,
+        p_shipping_address: el("newShipmentAddress").value.trim() || null,
+        p_customer_order_number: el("newShipmentOrderNumber").value.trim() || null,
+        p_delivery_note_number: el("newShipmentDeliveryNote").value.trim() || null,
+        p_note: el("newShipmentNote").value.trim() || null
+      });
+
+      el("createShipmentBtn").disabled = false;
+
+      if (error) {
+        alert("A szállítmány létrehozása sikertelen: " + error.message);
+        return;
+      }
+
+      const row = Array.isArray(data) ? data[0] : data;
+      selectedShipmentId = row.id;
+      el("newShipmentModal").classList.add("hidden");
+      await loadAllData();
+      setTab("shipments");
+      status(el("shipmentStatusMessage"), `${row.shipment_number} piszkozat létrejött.`, "ok");
+    }
+
+    function selectedShipment() {
+      return shipments.find(s => String(s.id) === String(selectedShipmentId));
+    }
+
+    function renderShipmentBuilder() {
+      const shipment = selectedShipment();
+
+      if (!shipment) {
+        el("shipmentBuilder").classList.add("hidden");
+        return;
+      }
+
+      el("shipmentBuilder").classList.remove("hidden");
+
+      const items = shipmentItems.filter(i => String(i.shipment_id) === String(shipment.id));
+      const totals = shipmentTotals(shipment.id);
+      const isDraft = shipment.status === "draft";
+
+      const availableLots = lots
+        .filter(l => l.status === "active")
+        .map(l => ({
+          ...l,
+          currentQty:Number(items.find(i => String(i.lot_id) === String(l.id))?.quantity || 0),
+          maxQty:availableForShipment(l.id, shipment.id)
+        }))
+        .filter(l => l.maxQty > 0 || l.currentQty > 0)
+        .sort((a,b) => String(a.best_before).localeCompare(String(b.best_before)));
+
+      el("shipmentBuilderContent").innerHTML = `
+        <div class="shipment-header">
+          <div>
+            <div class="shipment-number">${escapeHtml(shipment.shipment_number)}</div>
+            <div class="sub">
+              ${escapeHtml(partnerName(shipment.partner_id))} · ${escapeHtml(formatDate(shipment.shipment_date))}
+            </div>
+          </div>
+          ${shipmentStatusBadge(shipment.status)}
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item"><small>Szállítási cím</small><strong>${escapeHtml(shipment.shipping_address || "—")}</strong></div>
+          <div class="detail-item"><small>Partner rendelési száma</small><strong>${escapeHtml(shipment.customer_order_number || "—")}</strong></div>
+          <div class="detail-item"><small>Szállítólevél</small><strong>${escapeHtml(shipment.delivery_note_number || "—")}</strong></div>
+          <div class="detail-item"><small>Összesen</small><strong>${formatNumber(totals.lotCount)} LOT · ${formatNumber(totals.units)} db</strong></div>
+        </div>
+
+        <div class="actions">
+          ${shipment.status === "draft" ? `<button class="btn primary" data-shipment-action="closed">Szállítmány lezárása</button>` : ""}
+          ${shipment.status === "closed" ? `<button class="btn success" data-shipment-action="shipped">Kiszállítottnak jelölés</button>` : ""}
+          ${shipment.status === "draft" || shipment.status === "closed" ? `<button class="btn danger" data-shipment-void="${shipment.id}">Sztornózás</button>` : ""}
+          <button class="btn secondary" data-close-shipment-builder>Bezárás</button>
+        </div>
+
+        <div class="shipment-layout section-gap">
+          <div class="panel-soft">
+            <div class="toolbar">
+              <h3 style="margin:0">Elérhető LOT-ok</h3>
+              <input id="shipmentLotSearch" style="max-width:260px" placeholder="LOT vagy termék keresése" />
+            </div>
+            <div id="availableLotsForShipment"></div>
+          </div>
+
+          <div class="panel-soft">
+            <h3>Szállítmány tartalma</h3>
+            <div id="shipmentItemsList"></div>
+          </div>
+        </div>
+      `;
+
+      renderAvailableLotsForShipment(availableLots, isDraft);
+      renderShipmentItemsList(items, isDraft);
+    }
+
+    function renderAvailableLotsForShipment(preparedLots = null, isDraft = null) {
+      const shipment = selectedShipment();
+      if (!shipment) return;
+
+      const items = shipmentItems.filter(i => String(i.shipment_id) === String(shipment.id));
+      const query = el("shipmentLotSearch")?.value.trim().toLowerCase() || "";
+      const draft = isDraft ?? shipment.status === "draft";
+
+      const rows = (preparedLots || lots
+        .filter(l => l.status === "active")
+        .map(l => ({
+          ...l,
+          currentQty:Number(items.find(i => String(i.lot_id) === String(l.id))?.quantity || 0),
+          maxQty:availableForShipment(l.id, shipment.id)
+        }))
+        .filter(l => l.maxQty > 0 || l.currentQty > 0))
+        .filter(l => {
+          if (!query) return true;
+          return [l.lot_number,l.flavor_code,flavorName(l.flavor_code),l.size_ml]
+            .some(v => String(v).toLowerCase().includes(query));
+        });
+
+      if (!rows.length) {
+        el("availableLotsForShipment").innerHTML = `<div class="empty">Nincs elérhető LOT.</div>`;
+        return;
+      }
+
+      el("availableLotsForShipment").innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>LOT</th><th>Termék</th><th>Lejárat</th><th>Elérhető</th><th>Darabszám</th><th></th></tr></thead>
+            <tbody>
+              ${rows.map(l => `
+                <tr>
+                  <td><button class="lot-link" data-detail-id="${l.id}">${escapeHtml(l.lot_number)}</button></td>
+                  <td>${escapeHtml(flavorName(l.flavor_code))}<br><span class="sub">${l.size_ml} ml</span></td>
+                  <td>${escapeHtml(formatDate(l.best_before))}</td>
+                  <td class="${l.maxQty > 0 ? "stock-positive" : "stock-zero"}">${formatNumber(l.maxQty)}</td>
+                  <td style="min-width:110px">
+                    <input id="shipmentQty-${l.id}" type="number" min="1" max="${l.maxQty}" value="${l.currentQty || ""}" ${draft ? "" : "disabled"} />
+                  </td>
+                  <td>${draft ? `<button class="btn btn-small primary" data-set-shipment-item="${l.id}">Beállítás</button>` : "—"}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function renderShipmentItemsList(items, isDraft) {
+      if (!items.length) {
+        el("shipmentItemsList").innerHTML = `<div class="empty">Még nincs LOT hozzárendelve.</div>`;
+        return;
+      }
+
+      el("shipmentItemsList").innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>LOT</th><th>Termék</th><th>Db</th><th></th></tr></thead>
+            <tbody>
+              ${items.map(item => {
+                const lot = lots.find(l => String(l.id) === String(item.lot_id));
+                return `
+                  <tr>
+                    <td><button class="lot-link" data-detail-id="${lot?.id}">${escapeHtml(lot?.lot_number || "—")}</button></td>
+                    <td>${escapeHtml(lot ? flavorName(lot.flavor_code) : "—")}<br><span class="sub">${lot?.size_ml || ""} ml</span></td>
+                    <td>${formatNumber(item.quantity)}</td>
+                    <td>${isDraft ? `<button class="btn btn-small danger" data-remove-shipment-item="${item.id}">Törlés</button>` : "—"}</td>
+                  </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    async function setShipmentItem(lotId) {
+      const shipment = selectedShipment();
+      const quantity = Number(el(`shipmentQty-${lotId}`).value);
+
+      if (!shipment || !Number.isInteger(quantity) || quantity <= 0) {
+        alert("Adj meg pozitív egész darabszámot.");
+        return;
+      }
+
+      const { error } = await supabase.rpc("set_gellamille_shipment_item", {
+        p_shipment_id: shipment.id,
+        p_lot_id: Number(lotId),
+        p_quantity: quantity
+      });
+
+      if (error) {
+        alert("A LOT hozzárendelése sikertelen: " + error.message);
+        return;
+      }
+
+      await loadAllData();
+      status(el("shipmentStatusMessage"), "A szállítmány tartalma frissült.", "ok");
+    }
+
+    async function removeShipmentItem(itemId) {
+      if (!confirm("Biztos, hogy eltávolítod ezt a LOT-ot a szállítmányból?")) return;
+
+      const { error } = await supabase.rpc("remove_gellamille_shipment_item", {
+        p_shipment_item_id: Number(itemId)
+      });
+
+      if (error) {
+        alert("A tétel eltávolítása sikertelen: " + error.message);
+        return;
+      }
+
+      await loadAllData();
+    }
+
+    async function advanceShipment(targetStatus) {
+      const shipment = selectedShipment();
+      if (!shipment) return;
+
+      const text = targetStatus === "closed"
+        ? "Biztos, hogy lezárod a szállítmányt? Ezután a LOT-ok már nem módosíthatók."
+        : "Biztos, hogy kiszállítottnak jelölöd a szállítmányt?";
+
+      if (!confirm(text)) return;
+
+      const { error } = await supabase.rpc("advance_gellamille_shipment", {
+        p_shipment_id: shipment.id,
+        p_target_status: targetStatus
+      });
+
+      if (error) {
+        alert("A státuszváltás sikertelen: " + error.message);
+        return;
+      }
+
+      await loadAllData();
+    }
+
+    function openVoidShipmentModal(shipmentId) {
+      const s = shipments.find(row => String(row.id) === String(shipmentId));
+      if (!s) return;
+
+      selectedVoidShipmentId = s.id;
+      const totals = shipmentTotals(s.id);
+
+      el("voidShipmentSummary").innerHTML = `
+        <strong>${escapeHtml(s.shipment_number)}</strong><br>
+        ${escapeHtml(partnerName(s.partner_id))} · ${formatNumber(totals.lotCount)} LOT · ${formatNumber(totals.units)} db
+      `;
+      el("voidShipmentReason").value = "";
+      el("voidShipmentModal").classList.remove("hidden");
+    }
+
+    async function voidShipment() {
+      const reason = el("voidShipmentReason").value.trim();
+
+      if (reason.length < 5) {
+        alert("Az indok legalább 5 karakter legyen.");
+        return;
+      }
+
+      const { error } = await supabase.rpc("void_gellamille_shipment", {
+        p_shipment_id: Number(selectedVoidShipmentId),
+        p_reason: reason
+      });
+
+      if (error) {
+        alert("A sztornózás sikertelen: " + error.message);
+        return;
+      }
+
+      el("voidShipmentModal").classList.add("hidden");
+      selectedVoidShipmentId = null;
+      await loadAllData();
+      status(el("shipmentStatusMessage"), "A szállítmány sztornózva, a foglalás felszabadult.", "ok");
+    }
+
+    function openVoidLotModal(id) {
       const row = lots.find(l => String(l.id) === String(id));
       if (!row || row.status !== "active") return;
+
+      const stock = stockForLot(row.id);
+      if (stock.reserved > 0 || stock.shipped > 0) {
+        alert("Ez a LOT szállítmányhoz van rendelve. Előbb rendezd a kapcsolódó szállítmányokat.");
+        return;
+      }
 
       selectedVoidLot = row;
       el("voidLotInterpretation").innerHTML = interpretationHtml(row);
@@ -1086,15 +2000,13 @@
     function composedVoidReason() {
       const type = el("voidReasonType").value;
       const detail = el("voidReasonDetail").value.trim();
-
       if (!type) return "";
       if (type === "Egyéb") return detail;
       return detail ? `${type} – ${detail}` : type;
     }
 
-    async function confirmVoid() {
+    async function confirmVoidLot() {
       if (!selectedVoidLot) return;
-
       const reason = composedVoidReason();
 
       if (reason.length < 5) {
@@ -1102,14 +2014,10 @@
         return;
       }
 
-      el("confirmVoidBtn").disabled = true;
-
       const { error } = await supabase.rpc("void_gellamille_lot", {
         p_lot_id: selectedVoidLot.id,
         p_reason: reason
       });
-
-      el("confirmVoidBtn").disabled = false;
 
       if (error) {
         alert("A sztornózás sikertelen: " + error.message);
@@ -1118,32 +2026,38 @@
 
       el("voidModal").classList.add("hidden");
       selectedVoidLot = null;
-      await loadLots();
+      await loadAllData();
       setTab("journal");
-      status(el("journalStatus"), "A LOT sztornózása megtörtént és naplózásra került.", "ok");
     }
 
-    function openDetail(id) {
+    function openLotDetail(id) {
       const row = lots.find(l => String(l.id) === String(id));
       if (!row) return;
+
+      const stock = stockForLot(row.id);
+      const allocations = shipmentItems
+        .filter(i => String(i.lot_id) === String(row.id))
+        .map(i => ({ item:i, shipment:shipments.find(s => String(s.id) === String(i.shipment_id)) }))
+        .filter(x => x.shipment);
 
       el("detailTitle").textContent = `${row.lot_number} adatlap`;
       el("detailInterpretation").innerHTML = interpretationHtml(row);
 
       const fields = [
-        ["Státusz", row.status === "void" ? "Sztornózott" : "Aktív"],
-        ["Íz", flavorName(row.flavor_code)],
-        ["Kiszerelés", `${row.size_ml} ml`],
-        ["Éves terméksorszám", String(row.batch_no).padStart(4,"0")],
-        ["Gyártás dátuma", formatDate(row.production_date)],
-        ["Gyártási időszak", periodName(row.production_period)],
-        ["Darabszám", `${formatNumber(row.quantity)} db`],
-        ["Lejárat", formatDate(row.best_before)],
-        ["Felelős", operatorName(row.operator_id, row.operator_name)],
-        ["Megjegyzés", row.note || "—"],
-        ["Létrehozva", new Date(row.created_at).toLocaleString("hu-HU")],
-        ["Sztornó indoka", row.void_reason || "—"],
-        ["Sztornózva", row.voided_at ? new Date(row.voided_at).toLocaleString("hu-HU") : "—"]
+        ["Státusz",row.status === "void" ? "Sztornózott" : "Aktív"],
+        ["Íz",flavorName(row.flavor_code)],
+        ["Kiszerelés",`${row.size_ml} ml`],
+        ["Éves terméksorszám",String(row.batch_no).padStart(4,"0")],
+        ["Gyártás dátuma",formatDate(row.production_date)],
+        ["Gyártási időszak",periodName(row.production_period)],
+        ["Gyártott darabszám",`${formatNumber(row.quantity)} db`],
+        ["Lefoglalt",`${formatNumber(stock.reserved)} db`],
+        ["Kiszállított",`${formatNumber(stock.shipped)} db`],
+        ["Elérhető",`${formatNumber(stock.available)} db`],
+        ["Lejárat",formatDate(row.best_before)],
+        ["Felelős",operatorName(row.operator_id,row.operator_name)],
+        ["Megjegyzés",row.note || "—"],
+        ["Sztornó indoka",row.void_reason || "—"]
       ];
 
       el("detailContent").innerHTML = fields.map(([label,value]) => `
@@ -1153,15 +2067,33 @@
         </div>
       `).join("");
 
+      el("detailAllocations").innerHTML = `
+        <h3>Kapcsolódó szállítmányok</h3>
+        ${allocations.length ? `
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Szállítmány</th><th>Partner</th><th>Státusz</th><th>Darabszám</th></tr></thead>
+              <tbody>
+                ${allocations.map(({item,shipment}) => `
+                  <tr class="${shipment.status === "void" ? "row-void" : ""}">
+                    <td><button class="text-link" data-open-shipment="${shipment.id}">${escapeHtml(shipment.shipment_number)}</button></td>
+                    <td>${escapeHtml(partnerName(shipment.partner_id))}</td>
+                    <td>${shipmentStatusBadge(shipment.status)}</td>
+                    <td>${formatNumber(item.quantity)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>` : `<div class="empty">Ez a LOT még nincs szállítmányhoz rendelve.</div>`}
+      `;
+
       el("detailModal").classList.remove("hidden");
     }
 
-    function dateKey(dateString) {
-      return dateString;
-    }
+    function dateKey(dateString) { return dateString; }
 
     function startOfWeek(date) {
-      const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const copy = new Date(date.getFullYear(),date.getMonth(),date.getDate());
       const day = copy.getDay() || 7;
       copy.setDate(copy.getDate() - day + 1);
       return copy;
@@ -1171,24 +2103,17 @@
       return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
     }
 
-    function weekKey(dateString) {
-      return isoDate(startOfWeek(parseDate(dateString)));
-    }
-
-    function monthKey(dateString) {
-      return dateString.slice(0,7);
-    }
+    function weekKey(dateString) { return isoDate(startOfWeek(parseDate(dateString))); }
+    function monthKey(dateString) { return dateString.slice(0,7); }
 
     function applyAnalyticsPreset(preset) {
       const today = parseDate(localDate());
       let from = "";
       let to = localDate();
 
-      if (preset === "today") {
-        from = to;
-      } else if (preset === "current_week") {
-        from = isoDate(startOfWeek(today));
-      } else if (preset === "previous_week") {
+      if (preset === "today") from = to;
+      else if (preset === "current_week") from = isoDate(startOfWeek(today));
+      else if (preset === "previous_week") {
         const currentStart = startOfWeek(today);
         const previousStart = new Date(currentStart);
         previousStart.setDate(previousStart.getDate() - 7);
@@ -1199,7 +2124,7 @@
       } else if (preset === "current_month") {
         from = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-01`;
       } else if (preset === "previous_month") {
-        const startCurrent = new Date(today.getFullYear(), today.getMonth(), 1);
+        const startCurrent = new Date(today.getFullYear(),today.getMonth(),1);
         const endPrevious = new Date(startCurrent);
         endPrevious.setDate(0);
         from = `${endPrevious.getFullYear()}-${String(endPrevious.getMonth()+1).padStart(2,"0")}-01`;
@@ -1207,10 +2132,8 @@
       } else if (preset === "all") {
         const dates = lots.map(l => l.production_date).filter(Boolean).sort();
         from = dates[0] || localDate();
-        to = dates[dates.length - 1] || localDate();
-      } else if (preset === "custom") {
-        return;
-      }
+        to = dates[dates.length-1] || localDate();
+      } else if (preset === "custom") return;
 
       el("analyticsFrom").value = from;
       el("analyticsTo").value = to;
@@ -1228,12 +2151,12 @@
       });
     }
 
-    function aggregate(rows, keyFn) {
+    function aggregate(rows,keyFn) {
       const map = new Map();
 
       for (const row of rows) {
         const key = keyFn(row);
-        const current = map.get(key) || { key, activeLots:0, voidedLots:0, units:0 };
+        const current = map.get(key) || { key,activeLots:0,voidedLots:0,units:0 };
 
         if (row.status === "active") {
           current.activeLots += 1;
@@ -1242,15 +2165,15 @@
           current.voidedLots += 1;
         }
 
-        map.set(key, current);
+        map.set(key,current);
       }
 
       return [...map.values()].sort((a,b) => a.key.localeCompare(b.key));
     }
 
-    function renderSummaryTable(targetId, rows, labelTitle, labelFormatter = value => value) {
+    function renderSummaryTable(targetId,rows,labelTitle,labelFormatter = value => value) {
       if (!rows.length) {
-        el(targetId).innerHTML = `<div class="empty">Nincs adat a kiválasztott időszakban.</div>`;
+        el(targetId).innerHTML = `<div class="empty">Nincs adat.</div>`;
         return;
       }
 
@@ -1273,30 +2196,29 @@
     }
 
     function renderProductBars(rows) {
-      const products = aggregate(rows, row => `${row.flavor_code}|${row.size_ml}`)
+      const products = aggregate(rows,row => `${row.flavor_code}|${row.size_ml}`)
         .sort((a,b) => b.units - a.units);
 
       if (!products.length) {
-        el("productBars").innerHTML = `<div class="empty">Nincs aktív termelési adat.</div>`;
+        el("productBars").innerHTML = `<div class="empty">Nincs adat.</div>`;
         return;
       }
 
-      const max = Math.max(...products.map(p => p.units), 1);
+      const max = Math.max(...products.map(p => p.units),1);
 
       el("productBars").innerHTML = products.map(item => {
         const [code,size] = item.key.split("|");
-        const percentage = (item.units / max) * 100;
         return `
           <div class="bar-row">
             <div>${escapeHtml(flavorName(code))} · ${size} ml</div>
-            <div class="bar-track"><div class="bar-fill" style="width:${percentage}%"></div></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(item.units/max)*100}%"></div></div>
             <div class="bar-value">${formatNumber(item.units)} db</div>
           </div>`;
       }).join("");
     }
 
     function renderProductTable(rows) {
-      const products = aggregate(rows, row => `${row.flavor_code}|${row.size_ml}`)
+      const products = aggregate(rows,row => `${row.flavor_code}|${row.size_ml}`)
         .sort((a,b) => b.units - a.units);
 
       if (!products.length) {
@@ -1331,30 +2253,12 @@
       const voidRows = rows.filter(r => r.status === "void");
 
       el("statActiveLots").textContent = formatNumber(activeRows.length);
-      el("statUnits").textContent = formatNumber(activeRows.reduce((sum,row) => sum + Number(row.quantity || 0), 0));
+      el("statUnits").textContent = formatNumber(activeRows.reduce((sum,row) => sum + Number(row.quantity || 0),0));
       el("statVoidedLots").textContent = formatNumber(voidRows.length);
 
-      renderSummaryTable(
-        "dailyAnalytics",
-        aggregate(rows, row => dateKey(row.production_date)),
-        "Dátum",
-        formatDate
-      );
-
-      renderSummaryTable(
-        "weeklyAnalytics",
-        aggregate(rows, row => weekKey(row.production_date)),
-        "Hét kezdete",
-        formatDate
-      );
-
-      renderSummaryTable(
-        "monthlyAnalytics",
-        aggregate(rows, row => monthKey(row.production_date)),
-        "Hónap",
-        value => value.replace("-", ".") + "."
-      );
-
+      renderSummaryTable("dailyAnalytics",aggregate(rows,row => dateKey(row.production_date)),"Dátum",formatDate);
+      renderSummaryTable("weeklyAnalytics",aggregate(rows,row => weekKey(row.production_date)),"Hét kezdete",formatDate);
+      renderSummaryTable("monthlyAnalytics",aggregate(rows,row => monthKey(row.production_date)),"Hónap",value => value.replace("-",".") + ".");
       renderProductBars(rows);
       renderProductTable(rows);
     }
@@ -1363,12 +2267,9 @@
       return `"${String(value ?? "").replaceAll('"','""')}"`;
     }
 
-    function downloadCsv(filename, header, rows) {
-      const csv = "\uFEFF" + [header, ...rows]
-        .map(row => row.map(csvCell).join(";"))
-        .join("\n");
-
-      const blob = new Blob([csv], { type:"text/csv;charset=utf-8" });
+    function downloadCsv(filename,header,rows) {
+      const csv = "\uFEFF" + [header,...rows].map(row => row.map(csvCell).join(";")).join("\n");
+      const blob = new Blob([csv],{ type:"text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -1379,33 +2280,36 @@
 
     function exportJournal() {
       const rows = filteredJournalLots();
-
       downloadCsv(
         `gellamille-lot-naplo-${localDate()}.csv`,
-        ["LOT","Státusz","Gyártás","Időszak","Íz","Ízkód","Kiszerelés ml","Éves sorszám","Darabszám","Lejárat","Felelős","Megjegyzés","Sztornó indoka","Sztornó ideje","Létrehozva"],
+        ["LOT","Státusz","Gyártás","Időszak","Íz","Ízkód","Kiszerelés ml","Éves sorszám","Darabszám","Lejárat","Felelős","Megjegyzés","Sztornó indoka"],
         rows.map(row => [
-          row.lot_number,
-          row.status === "void" ? "Sztornózott" : "Aktív",
-          row.production_date,
-          periodName(row.production_period),
-          flavorName(row.flavor_code),
-          row.flavor_code,
-          row.size_ml,
-          row.batch_no,
-          row.quantity,
-          row.best_before,
-          operatorName(row.operator_id, row.operator_name),
-          row.note,
-          row.void_reason,
-          row.voided_at,
-          row.created_at
+          row.lot_number,row.status,row.production_date,periodName(row.production_period),
+          flavorName(row.flavor_code),row.flavor_code,row.size_ml,row.batch_no,
+          row.quantity,row.best_before,operatorName(row.operator_id,row.operator_name),
+          row.note,row.void_reason
         ])
+      );
+    }
+
+    function exportInventory() {
+      const rows = filteredInventoryLots();
+      downloadCsv(
+        `gellamille-keszlet-${localDate()}.csv`,
+        ["LOT","Termék","Ízkód","Kiszerelés ml","Gyártva","Lefoglalva","Kiszállítva","Elérhető","Lejárat"],
+        rows.map(row => {
+          const stock = stockForLot(row.id);
+          return [
+            row.lot_number,flavorName(row.flavor_code),row.flavor_code,row.size_ml,
+            stock.produced,stock.reserved,stock.shipped,stock.available,row.best_before
+          ];
+        })
       );
     }
 
     function exportAnalytics() {
       const rows = analyticsLots();
-      const products = aggregate(rows, row => `${row.flavor_code}|${row.size_ml}`);
+      const products = aggregate(rows,row => `${row.flavor_code}|${row.size_ml}`);
 
       downloadCsv(
         `gellamille-elemzes-${el("analyticsFrom").value}-${el("analyticsTo").value}.csv`,
@@ -1418,88 +2322,138 @@
     }
 
     document.querySelectorAll(".tab-btn").forEach(btn => {
-      btn.addEventListener("click", () => setTab(btn.dataset.tab));
+      btn.addEventListener("click",() => setTab(btn.dataset.tab));
     });
 
-    el("loginBtn").addEventListener("click", login);
-    el("loginPassword").addEventListener("keydown", event => {
+    el("loginBtn").addEventListener("click",login);
+    el("loginPassword").addEventListener("keydown",event => {
       if (event.key === "Enter") login();
     });
-    el("logoutBtn").addEventListener("click", logout);
-    el("productionDate").addEventListener("change", refreshExpiryPreview);
-    el("addOperatorBtn").addEventListener("click", addOperator);
-    el("newOperatorName").addEventListener("keydown", event => {
+    el("logoutBtn").addEventListener("click",logout);
+
+    el("productionDate").addEventListener("change",refreshExpiryPreview);
+    el("addOperatorBtn").addEventListener("click",addOperator);
+    el("newOperatorName").addEventListener("keydown",event => {
       if (event.key === "Enter") addOperator();
     });
-    el("createLotBtn").addEventListener("click", openCreateConfirm);
-    el("cancelCreateBtn").addEventListener("click", () => el("confirmModal").classList.add("hidden"));
-    el("confirmCreateBtn").addEventListener("click", createLot);
-    el("copyLotBtn").addEventListener("click", async () => {
+    el("createLotBtn").addEventListener("click",openCreateConfirm);
+    el("cancelCreateBtn").addEventListener("click",() => el("confirmModal").classList.add("hidden"));
+    el("confirmCreateBtn").addEventListener("click",createLot);
+    el("copyLotBtn").addEventListener("click",async () => {
       await navigator.clipboard.writeText(el("createdLot").textContent);
-      status(el("createStatus"), "LOT-szám kimásolva.", "ok");
+      status(el("createStatus"),"LOT-szám kimásolva.","ok");
     });
-    el("openCreatedDetailBtn").addEventListener("click", () => {
-      if (createdLotRow) openDetail(createdLotRow.id);
-    });
-
-    el("refreshBtn").addEventListener("click", loadLots);
-    el("exportBtn").addEventListener("click", exportJournal);
-    el("searchInput").addEventListener("input", renderJournal);
-    el("statusFilter").addEventListener("change", renderJournal);
-
-    el("lotsTable").addEventListener("click", event => {
-      const voidButton = event.target.closest("[data-void-id]");
-      const detailButton = event.target.closest("[data-detail-id]");
-      if (voidButton) openVoidModal(voidButton.dataset.voidId);
-      if (detailButton) openDetail(detailButton.dataset.detailId);
+    el("openCreatedDetailBtn").addEventListener("click",() => {
+      if (createdLotRow) openLotDetail(createdLotRow.id);
     });
 
-    el("recentLotsTable").addEventListener("click", event => {
-      const detailButton = event.target.closest("[data-detail-id]");
-      if (detailButton) openDetail(detailButton.dataset.detailId);
-    });
+    el("refreshBtn").addEventListener("click",loadAllData);
+    el("exportBtn").addEventListener("click",exportJournal);
+    el("searchInput").addEventListener("input",renderJournal);
+    el("statusFilter").addEventListener("change",renderJournal);
 
-    el("cancelVoidBtn").addEventListener("click", () => {
+    el("inventorySearch").addEventListener("input",renderInventory);
+    el("inventoryFlavorFilter").addEventListener("change",renderInventory);
+    el("inventoryAvailabilityFilter").addEventListener("change",renderInventory);
+    el("inventoryExportBtn").addEventListener("click",exportInventory);
+
+    el("createPartnerBtn").addEventListener("click",createPartner);
+    el("partnerSearch").addEventListener("input",renderPartners);
+
+    el("newShipmentBtn").addEventListener("click",openNewShipmentModal);
+    el("newShipmentPartner").addEventListener("change",autofillShipmentAddress);
+    el("cancelNewShipmentBtn").addEventListener("click",() => el("newShipmentModal").classList.add("hidden"));
+    el("createShipmentBtn").addEventListener("click",createShipment);
+    el("shipmentSearch").addEventListener("input",renderShipments);
+    el("shipmentStatusFilter").addEventListener("change",renderShipments);
+
+    el("cancelVoidBtn").addEventListener("click",() => {
       el("voidModal").classList.add("hidden");
       selectedVoidLot = null;
     });
-    el("confirmVoidBtn").addEventListener("click", confirmVoid);
-    el("closeDetailBtn").addEventListener("click", () => el("detailModal").classList.add("hidden"));
+    el("confirmVoidBtn").addEventListener("click",confirmVoidLot);
 
-    el("analyticsPreset").addEventListener("change", event => applyAnalyticsPreset(event.target.value));
-    el("analyticsFrom").addEventListener("change", () => {
+    el("cancelVoidShipmentBtn").addEventListener("click",() => {
+      el("voidShipmentModal").classList.add("hidden");
+      selectedVoidShipmentId = null;
+    });
+    el("confirmVoidShipmentBtn").addEventListener("click",voidShipment);
+
+    el("closeDetailBtn").addEventListener("click",() => el("detailModal").classList.add("hidden"));
+    el("closePartnerDetailBtn").addEventListener("click",() => el("partnerDetailModal").classList.add("hidden"));
+
+    el("analyticsPreset").addEventListener("change",event => applyAnalyticsPreset(event.target.value));
+    el("analyticsFrom").addEventListener("change",() => {
       el("analyticsPreset").value = "custom";
       renderAnalytics();
     });
-    el("analyticsTo").addEventListener("change", () => {
+    el("analyticsTo").addEventListener("change",() => {
       el("analyticsPreset").value = "custom";
       renderAnalytics();
     });
-    el("analyticsExportBtn").addEventListener("click", exportAnalytics);
+    el("analyticsExportBtn").addEventListener("click",exportAnalytics);
 
-    ["confirmModal","voidModal","detailModal"].forEach(id => {
-      el(id).addEventListener("click", event => {
+    document.addEventListener("click",event => {
+      const detailButton = event.target.closest("[data-detail-id]");
+      const voidLotButton = event.target.closest("[data-void-id]");
+      const partnerButton = event.target.closest("[data-partner-detail]");
+      const openShipmentButton = event.target.closest("[data-open-shipment]");
+      const setItemButton = event.target.closest("[data-set-shipment-item]");
+      const removeItemButton = event.target.closest("[data-remove-shipment-item]");
+      const shipmentAction = event.target.closest("[data-shipment-action]");
+      const voidShipmentButton = event.target.closest("[data-shipment-void]");
+      const closeShipmentBuilder = event.target.closest("[data-close-shipment-builder]");
+
+      if (detailButton) openLotDetail(detailButton.dataset.detailId);
+      if (voidLotButton) openVoidLotModal(voidLotButton.dataset.voidId);
+      if (partnerButton) openPartnerDetail(partnerButton.dataset.partnerDetail);
+
+      if (openShipmentButton) {
+        selectedShipmentId = Number(openShipmentButton.dataset.openShipment);
+        el("detailModal").classList.add("hidden");
+        el("partnerDetailModal").classList.add("hidden");
+        setTab("shipments");
+        renderShipmentBuilder();
+        window.scrollTo({ top:document.body.scrollHeight,behavior:"smooth" });
+      }
+
+      if (setItemButton) setShipmentItem(setItemButton.dataset.setShipmentItem);
+      if (removeItemButton) removeShipmentItem(removeItemButton.dataset.removeShipmentItem);
+      if (shipmentAction) advanceShipment(shipmentAction.dataset.shipmentAction);
+      if (voidShipmentButton) openVoidShipmentModal(voidShipmentButton.dataset.shipmentVoid);
+
+      if (closeShipmentBuilder) {
+        selectedShipmentId = null;
+        renderShipmentBuilder();
+      }
+    });
+
+    document.addEventListener("input",event => {
+      if (event.target?.id === "shipmentLotSearch") renderAvailableLotsForShipment();
+    });
+
+    ["confirmModal","voidModal","detailModal","newShipmentModal","voidShipmentModal","partnerDetailModal"].forEach(id => {
+      el(id).addEventListener("click",event => {
         if (event.target === el(id)) el(id).classList.add("hidden");
       });
     });
 
-    document.addEventListener("keydown", event => {
+    document.addEventListener("keydown",event => {
       if (event.key === "Escape") {
-        el("confirmModal").classList.add("hidden");
-        el("voidModal").classList.add("hidden");
-        el("detailModal").classList.add("hidden");
+        ["confirmModal","voidModal","detailModal","newShipmentModal","voidShipmentModal","partnerDetailModal"]
+          .forEach(id => el(id).classList.add("hidden"));
       }
     });
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data:{ session } } = await supabase.auth.getSession();
     await showSession(session);
 
-    supabase.auth.onAuthStateChange((_event, newSession) => {
-      setTimeout(() => showSession(newSession), 0);
+    supabase.auth.onAuthStateChange((_event,newSession) => {
+      setTimeout(() => showSession(newSession),0);
     });
 
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+      window.addEventListener("load",() => navigator.serviceWorker.register("./sw.js"));
     }
   </script>
 </body>

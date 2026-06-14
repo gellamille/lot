@@ -1,7 +1,7 @@
 {
-  "name": "Gellamille LOT rendszer",
-  "short_name": "Gellamille LOT",
-  "description": "LOT generátor, gyártási napló és termelési elemzés",
+  "name": "Gellamille gyártási rendszer",
+  "short_name": "Gellamille",
+  "description": "LOT, készlet, partner és szállítmánykezelő rendszer",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f2f0ea",
